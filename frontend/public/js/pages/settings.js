@@ -1,4 +1,4 @@
-import { renderSidebar, initSidebar } from '../components/Sidebar.js';
+import { renderSidebar, initSidebar } from '../components/sidebar.js';
 import { getUser, refreshUser, getToken } from '../services/auth.js';
 import { api } from '../services/api.js';
 import { showToast } from '../utils/toast.js';
