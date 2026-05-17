@@ -1,52 +1,94 @@
 import { register } from '../services/auth.js';
 import { showToast } from '../utils/toast.js';
 
-const COURSES = [
-  // College of Engineering and Technology
-  'BS Information Technology',
-  'BS Computer Engineering',
-  'BS Electronics Engineering',
-  'BS Civil Engineering',
-  'BS Electrical Engineering',
-  'BS Mechanical Engineering',
-  // College of Arts and Sciences
-  'BS Biology',
-  'BS Mathematics',
-  'AB English Language Studies',
-  'AB Political Science',
-  // College of Business and Management
-  'BS Business Administration',
-  'BS Accountancy',
-  'BS Office Administration',
-  // College of Education
-  'Bachelor of Elementary Education',
-  'Bachelor of Secondary Education',
-  'Bachelor of Technical-Vocational Teacher Education',
-  // College of Nursing and Health Sciences
-  'BS Nursing',
-  'BS Midwifery',
-  // College of Agriculture
-  'BS Agriculture',
-  'BS Fisheries',
-  // College of Criminology
-  'BS Criminology',
-  // Graduate School
-  'Master of Arts in Education',
-  'Master in Business Administration',
-  'Master of Science in Information Technology',
-  'Other',
-];
-
-const DEPARTMENTS = [
-  'College of Engineering and Technology',
-  'College of Arts and Sciences',
-  'College of Business and Management',
-  'College of Education',
-  'College of Nursing and Health Sciences',
-  'College of Agriculture',
-  'College of Criminology',
-  'Graduate School',
-];
+const COLLEGES = {
+  'College of Engineering and Technology': [
+    'BS Information Technology',
+    'BS Computer Engineering',
+    'BS Electronics Engineering',
+    'BS Civil Engineering',
+    'BS Electrical Engineering',
+    'BS Mechanical Engineering',
+    'BS Industrial Engineering',
+    'BS Chemical Engineering',
+    'BS Environmental Engineering',
+  ],
+  'College of Arts and Sciences': [
+    'BS Biology',
+    'BS Mathematics',
+    'BS Statistics',
+    'BS Physics',
+    'BS Chemistry',
+    'BS Environmental Science',
+    'AB English Language Studies',
+    'AB Communication',
+    'AB Political Science',
+    'AB Sociology',
+    'AB Philosophy',
+  ],
+  'College of Business and Management': [
+    'BS Business Administration major in Marketing Management',
+    'BS Business Administration major in Financial Management',
+    'BS Business Administration major in Human Resource Management',
+    'BS Business Administration major in Operations Management',
+    'BS Accountancy',
+    'BS Management Accounting',
+    'BS Office Administration',
+    'BS Entrepreneurship',
+    'BS Cooperatives',
+  ],
+  'College of Education': [
+    'Bachelor of Elementary Education',
+    'Bachelor of Secondary Education major in English',
+    'Bachelor of Secondary Education major in Mathematics',
+    'Bachelor of Secondary Education major in Science',
+    'Bachelor of Secondary Education major in Filipino',
+    'Bachelor of Secondary Education major in Social Studies',
+    'Bachelor of Secondary Education major in Values Education',
+    'Bachelor of Physical Education',
+    'Bachelor of Technical-Vocational Teacher Education',
+    'Bachelor of Early Childhood Education',
+    'Bachelor of Special Needs Education',
+  ],
+  'College of Nursing and Health Sciences': [
+    'BS Nursing',
+    'BS Midwifery',
+    'BS Medical Technology',
+    'BS Pharmacy',
+    'BS Radiologic Technology',
+    'BS Physical Therapy',
+    'BS Nutrition and Dietetics',
+    'BS Public Health',
+  ],
+  'College of Agriculture and Natural Resources': [
+    'BS Agriculture major in Crop Science',
+    'BS Agriculture major in Animal Science',
+    'BS Agriculture major in Soil Science',
+    'BS Agriculture major in Agricultural Economics',
+    'BS Fisheries',
+    'BS Forestry',
+    'BS Agricultural Engineering',
+    'BS Food Technology',
+    'BS Horticulture',
+  ],
+  'College of Criminology': [
+    'BS Criminology',
+  ],
+  'College of Law': [
+    'Juris Doctor',
+  ],
+  'Graduate School': [
+    'Master of Arts in Education',
+    'Master of Arts in Teaching',
+    'Master in Business Administration',
+    'Master of Science in Information Technology',
+    'Master of Science in Agriculture',
+    'Master of Science in Nursing',
+    'Master of Public Administration',
+    'Doctor of Philosophy in Education',
+    'Doctor of Philosophy in Agriculture',
+  ],
+};
 
 const YEAR_LEVELS = [
   '1st Year',
@@ -70,7 +112,7 @@ export function renderRegister(app) {
             <span class="text-2xl font-black gradient-text">RavenSync</span>
           </a>
           <h1 class="text-2xl font-bold mb-2">Student Registration</h1>
-          <p class="text-slate-400 text-sm">Create your college emergency account</p>
+          <p class="text-slate-400 text-sm">Create your DOrSU emergency account</p>
         </div>
 
         <div class="glass rounded-2xl border border-white/10 p-8 shadow-2xl">
@@ -86,7 +128,7 @@ export function renderRegister(app) {
 
           <form id="register-form" class="space-y-5">
 
-            <!-- Section: Personal Info -->
+            <!-- Personal Info -->
             <div>
               <div class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3">Personal Information</div>
               <div class="grid grid-cols-2 gap-4">
@@ -124,7 +166,7 @@ export function renderRegister(app) {
               </div>
             </div>
 
-            <!-- Section: Academic Info -->
+            <!-- Academic Info -->
             <div>
               <div class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3">Academic Information</div>
               <div>
@@ -142,49 +184,33 @@ export function renderRegister(app) {
                 <i class="fa-solid fa-sitemap absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-sm"></i>
                 <select id="college" class="input pl-10" required>
                   <option value="">Select college...</option>
-                  ${DEPARTMENTS.map(d => `<option value="${d}">${d}</option>`).join('')}
+                  ${Object.keys(COLLEGES).map(c => `<option value="${c}">${c}</option>`).join('')}
                 </select>
               </div>
             </div>
 
-            <div class="grid grid-cols-2 gap-4">
-              <div>
-                <label class="block text-sm font-medium text-slate-300 mb-2">Course / Program *</label>
-                <div class="relative">
-                  <i class="fa-solid fa-book absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-sm"></i>
-                  <select id="course" class="input pl-10" required>
-                    <option value="">Select course...</option>
-                    ${COURSES.map(c => `<option value="${c}">${c}</option>`).join('')}
-                  </select>
-                </div>
-              </div>
-              <div id="other-course-wrap" class="hidden">
-                <label class="block text-sm font-medium text-slate-300 mb-2">Specify Course *</label>
-                <input type="text" id="other-course" class="input" placeholder="Type your course..."/>
+            <div>
+              <label class="block text-sm font-medium text-slate-300 mb-2">Course / Program *</label>
+              <div class="relative">
+                <i class="fa-solid fa-book absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-sm"></i>
+                <select id="course" class="input pl-10" required>
+                  <option value="">Select college first...</option>
+                </select>
               </div>
             </div>
 
-            <div class="grid grid-cols-2 gap-4">
-              <div>
-                <label class="block text-sm font-medium text-slate-300 mb-2">Year Level *</label>
-                <div class="relative">
-                  <i class="fa-solid fa-layer-group absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-sm"></i>
-                  <select id="year-level" class="input pl-10" required>
-                    <option value="">Select year level...</option>
-                    ${YEAR_LEVELS.map(y => `<option value="${y}">${y}</option>`).join('')}
-                  </select>
-                </div>
-              </div>
-              <div>
-                <label class="block text-sm font-medium text-slate-300 mb-2">Section / Block</label>
-                <div class="relative">
-                  <i class="fa-solid fa-users absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-sm"></i>
-                  <input type="text" id="section" class="input pl-10" placeholder="e.g. BSIT 2-A, Block 3"/>
-                </div>
+            <div>
+              <label class="block text-sm font-medium text-slate-300 mb-2">Year Level *</label>
+              <div class="relative">
+                <i class="fa-solid fa-layer-group absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-sm"></i>
+                <select id="year-level" class="input pl-10" required>
+                  <option value="">Select year level...</option>
+                  ${YEAR_LEVELS.map(y => `<option value="${y}">${y}</option>`).join('')}
+                </select>
               </div>
             </div>
 
-            <!-- Section: Account Security -->
+            <!-- Account Security -->
             <div>
               <div class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3">Account Security</div>
               <div class="grid grid-cols-2 gap-4">
@@ -203,7 +229,6 @@ export function renderRegister(app) {
                   </div>
                 </div>
               </div>
-              <!-- Password strength bar -->
               <div class="mt-2 space-y-1">
                 <div class="h-1.5 bg-white/10 rounded-full overflow-hidden">
                   <div id="pw-strength-bar" class="h-full rounded-full transition-all duration-300" style="width:0%"></div>
@@ -240,17 +265,13 @@ export function renderRegister(app) {
     </div>
   `;
 
-  // Show/hide "Other course" input
-  document.getElementById('course')?.addEventListener('change', (e) => {
-    const wrap = document.getElementById('other-course-wrap');
-    const otherInput = document.getElementById('other-course');
-    if (e.target.value === 'Other') {
-      wrap.classList.remove('hidden');
-      otherInput.required = true;
-    } else {
-      wrap.classList.add('hidden');
-      otherInput.required = false;
-    }
+  // Update courses when college changes
+  document.getElementById('college')?.addEventListener('change', (e) => {
+    const courseSelect = document.getElementById('course');
+    const courses = COLLEGES[e.target.value] || [];
+    courseSelect.innerHTML = courses.length
+      ? `<option value="">Select course...</option>` + courses.map(c => `<option value="${c}">${c}</option>`).join('')
+      : `<option value="">Select college first...</option>`;
   });
 
   // Password strength meter
@@ -286,16 +307,12 @@ export function renderRegister(app) {
     const confirm = document.getElementById('confirm-password').value;
     if (password !== confirm) { showToast('Passwords do not match', 'error'); return; }
 
-    const courseVal = document.getElementById('course').value;
-    const course = courseVal === 'Other'
-      ? document.getElementById('other-course').value.trim()
-      : courseVal;
-    if (!course) { showToast('Please select or enter your course', 'error'); return; }
+    const course = document.getElementById('course').value;
+    if (!course) { showToast('Please select your course', 'error'); return; }
 
     const college = document.getElementById('college').value;
     const yearLevel = document.getElementById('year-level').value;
-    const section = document.getElementById('section').value.trim();
-    const department = section ? `${college} — ${yearLevel} — ${section}` : `${college} — ${yearLevel}`;
+    const department = `${college} — ${yearLevel}`;
 
     const btn = document.getElementById('register-btn');
     const text = document.getElementById('register-text');
@@ -316,7 +333,7 @@ export function renderRegister(app) {
         studentId: document.getElementById('student-id').value.trim(),
         course,
         yearLevel,
-        section,
+        section: '',
       });
       showToast('Account created! Welcome to RavenSync.', 'success');
       navigate('/dashboard');
