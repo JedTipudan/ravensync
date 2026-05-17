@@ -9,7 +9,7 @@
 ### Prerequisites
 - Node.js 18+
 - MongoDB (local or Atlas)
-- Kafka (optional — falls back to offline queue automatically)
+- Kafka or RedPanda (optional — falls back to offline queue automatically)
 
 ### Installation
 
@@ -36,8 +36,9 @@ Open: **http://localhost:5000**
 
 | Role | Username | Password |
 |------|----------|----------|
-| Super Admin | admin | admin123 |
-| User | jed | jed123 |
+| Super Admin | admin | admin |
+| Super Admin | superadmin | super123 |
+| User | student | student123 |
 
 > Login uses **username**, not email.
 
@@ -50,6 +51,8 @@ RavenSync/
 ├── backend/
 │   ├── controllers/        # MVC Controllers
 │   ├── models/             # MongoDB Models
+│   │   ├── AdminPin.js     # Admin map pins (DB-persisted)
+│   │   └── LocationPin.js  # User location pins
 │   ├── routes/             # Express Routes
 │   ├── middlewares/        # Auth, Error, Audit
 │   ├── services/           # WebSocket, Kafka, XML
@@ -83,7 +86,7 @@ RavenSync/
 | Database | MongoDB + Mongoose |
 | Auth | JWT + bcrypt (12 rounds) |
 | Real-time | WebSocket (ws) |
-| Messaging | Kafka (kafkajs) + offline queue fallback |
+| Messaging | Kafka / RedPanda (kafkajs) + offline queue fallback |
 | XML | xml2js (DOM + SAX), xmlbuilder2 |
 | XSLT | Custom transformation engine |
 | Frontend | Vanilla JS (ES Modules), Tailwind CSS |
@@ -113,6 +116,15 @@ RavenSync/
 - `GET /api/channels/:id/messages` — Get messages
 - `POST /api/channels/:id/messages` — Send message
 
+### Map
+- `GET /api/map/admin-pins` — Get all admin pins (all authenticated users)
+- `POST /api/map/admin-pins` — Create admin pin (admin/superadmin)
+- `DELETE /api/map/admin-pins/:id` — Delete admin pin (admin/superadmin)
+- `DELETE /api/map/admin-pins` — Clear all admin pins (admin/superadmin)
+- `GET /api/map/pins` — Get all user location pins (admin/superadmin)
+- `POST /api/map/pins` — Save/update current user's location pin
+- `DELETE /api/map/pins/:userId` — Delete a user's location pin
+
 ### XML
 - `GET /api/xml/alerts` — Export alerts as XML
 - `GET /api/xml/users` — Export users as XML (admin+)
@@ -141,6 +153,18 @@ RavenSync/
 - `POST /api/announcements` — Create announcement (admin+)
 - `PATCH /api/announcements/:id/read` — Mark as read
 - `DELETE /api/announcements/:id` — Delete (admin+)
+
+---
+
+## 🗺️ Campus Map Features
+- Interactive map with **scroll-to-zoom**, **pinch-to-zoom** (mobile), and **drag-to-pan**
+- Zoom in/out buttons + reset button
+- Admin can place pins: Exit 🚪, Hazard ⚠️, Assembly Area 🏁, First Aid 🏥
+- **Admin pins are saved to MongoDB** and visible to all users in real-time
+- Users can share their location by clicking on the map
+- Admin sees all user locations live with name and timestamp
+- Live updates via WebSocket — no refresh needed
+- WebSocket listeners are cleaned up on page navigation to prevent memory leaks
 
 ---
 
@@ -200,6 +224,44 @@ Backups are saved to `backend/backups/db/` as timestamped ZIP files and visible 
 
 ---
 
+## ☁️ Production Deployment (Render + MongoDB Atlas + RedPanda)
+
+### Services Used
+| Service | Purpose | Free Tier |
+|---------|---------|-----------|
+| Render | Node.js hosting | Yes (spins down after 15min idle) |
+| MongoDB Atlas | Database | M0 Free (512MB) |
+| RedPanda Cloud | Kafka-compatible message broker | Serverless free (10GB/month) |
+
+### Environment Variables (Render)
+
+| Key | Value |
+|-----|-------|
+| `NODE_ENV` | `production` |
+| `PORT` | `5000` |
+| `MONGODB_URI` | `mongodb+srv://<user>:<pass>@cluster.mongodb.net/ravensync` |
+| `JWT_SECRET` | any long random string |
+| `KAFKA_BROKERS` | `seed-xxx.cloud.redpanda.com:9092` |
+| `KAFKA_SASL_USERNAME` | your RedPanda username |
+| `KAFKA_SASL_PASSWORD` | your RedPanda password |
+| `FRONTEND_URL` | `https://your-app.onrender.com` |
+
+### RedPanda Cloud Setup
+RedPanda is a Kafka-API compatible broker — `kafkajs` connects to it with no code changes, just SASL credentials:
+- SASL mechanism: `scram-sha-256`
+- SSL: enabled automatically when `KAFKA_SASL_USERNAME` is set
+- Required topics: `emergency.alerts`, `notifications`, `broadcasts`, `dead.letter`
+
+### Seeding the Database on Production
+Run locally pointing to Atlas:
+```powershell
+cd backend
+$env:MONGODB_URI="mongodb+srv://<user>:<pass>@cluster.mongodb.net/ravensync"
+node scripts/seed.js
+```
+
+---
+
 ## 🌗 Light & Dark Mode
 - **Light mode** is the default — clean white UI, high contrast for bright environments
 - **Dark mode** is optional — deep black backgrounds (`#0a0a0f`), vivid accent colors, readable even in a completely dark room
@@ -233,12 +295,18 @@ Backups are saved to `backend/backups/db/` as timestamped ZIP files and visible 
 
 ### Known Credentials After Fresh Seed
 ```
-superadmin → username: admin    password: admin123
-user       → username: student  password: student123
+superadmin → username: superadmin   password: super123
+admin      → username: admin        password: admin
+user       → username: student      password: student123
 ```
 
 ### MongoDB ObjectId Note
 Always use `node scripts/seed.js` to create users. Manual insertion must use `new mongoose.Types.ObjectId()` for `_id` — plain string IDs will break Mongoose's `save()` and `findById()`.
+
+### Offline Mode
+- Kafka/RedPanda is optional — if unavailable, messages queue locally and flush when connection is restored
+- WebSocket reconnects automatically every 3 seconds on disconnect
+- PWA service worker caches static assets for offline viewing
 
 ---
 
