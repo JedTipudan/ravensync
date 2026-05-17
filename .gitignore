@@ -1,0 +1,24 @@
+# Dependencies
+node_modules/
+backend/node_modules/
+
+# Environment secrets — NEVER commit
+backend/.env
+.env
+
+# Logs
+backend/logs/
+*.log
+
+# Backups & generated files
+backend/backups/
+backend/xml/
+backend/uploads/avatars/*
+!backend/uploads/avatars/.gitkeep
+
+# Temp files
+backend/_rs_*.js
+
+# OS
+.DS_Store
+Thumbs.db

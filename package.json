@@ -1,0 +1,11 @@
+{
+  "name": "ravensync",
+  "version": "1.0.0",
+  "description": "RavenSync - Enterprise Emergency Communication Platform",
+  "scripts": {
+    "install:backend": "cd backend && npm install",
+    "seed": "cd backend && node scripts/seed.js",
+    "start": "cd backend && npm start",
+    "dev": "cd backend && npm run dev"
+  }
+}
