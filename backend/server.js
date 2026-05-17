@@ -54,8 +54,9 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(morgan('combined', { stream: { write: (msg) => logger.info(msg.trim()) } }));
 
 // Static files
-const frontendPath = path.join(__dirname, '..', 'frontend', 'public');
-app.use(express.static(frontendPath));
+const frontendPath = path.resolve(__dirname, '..', 'frontend', 'public');
+logger.info(`📁 Serving static files from: ${frontendPath}`);
+app.use(express.static(frontendPath, { index: 'index.html' }));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // API Routes
