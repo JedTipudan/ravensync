@@ -54,7 +54,8 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(morgan('combined', { stream: { write: (msg) => logger.info(msg.trim()) } }));
 
 // Static files
-app.use(express.static(path.join(__dirname, '../frontend/public')));
+const frontendPath = path.join(__dirname, '..', 'frontend', 'public');
+app.use(express.static(frontendPath));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // API Routes
@@ -77,7 +78,7 @@ app.get('/api/health', (req, res) => {
 // Serve frontend for all non-API routes
 app.get('*', (req, res) => {
   if (!req.path.startsWith('/api')) {
-    res.sendFile(path.join(__dirname, '../frontend/public/index.html'));
+    res.sendFile(path.join(frontendPath, 'index.html'));
   }
 });
 
