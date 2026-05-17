@@ -32,10 +32,19 @@ initWebSocket(server);
 connectKafka().catch(() => {});
 
 // Security middleware
-app.use(helmet({ contentSecurityPolicy: false }));
+app.use(helmet({
+  contentSecurityPolicy: false,
+  crossOriginEmbedderPolicy: false,
+}));
 app.use(cors({ origin: process.env.FRONTEND_URL || '*', credentials: true }));
 app.use(mongoSanitize());
-app.use(compression());
+app.use(compression({
+  filter: (req, res) => {
+    // Don't compress JS/CSS — let browser handle MIME correctly
+    if (req.path.match(/\.(js|css|map)$/)) return false;
+    return compression.filter(req, res);
+  }
+}));
 
 // Rate limiting — relaxed in development for demo/testing
 const limitWindow = parseInt(process.env.RATE_LIMIT_WINDOW) || 15;
@@ -75,7 +84,12 @@ app.get('/api/health', (req, res) => {
 // Static files
 const frontendPath = path.resolve(__dirname, '..', 'frontend', 'public');
 logger.info(`📁 Serving static files from: ${frontendPath}`);
-app.use(express.static(frontendPath));
+app.use(express.static(frontendPath, {
+  setHeaders: (res, filePath) => {
+    if (filePath.endsWith('.js')) res.setHeader('Content-Type', 'application/javascript');
+    if (filePath.endsWith('.css')) res.setHeader('Content-Type', 'text/css');
+  }
+}));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // SPA fallback — serve index.html for all non-API, non-file routes
