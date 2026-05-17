@@ -30,23 +30,23 @@ export function renderMap(app) {
             <p class="text-xs text-slate-500">DORSU Emergency Evacuation Map</p>
           </div>
         </div>
-        <div class="flex items-center gap-3">
+        <div class="flex items-center gap-2">
           ${renderNotificationBell()}
           ${isAdmin ? `
-            <select id="pin-type-select" class="input text-sm py-1.5 px-3 w-auto">
+            <select id="pin-type-select" class="input text-xs py-1.5 px-2 w-auto max-w-[120px] sm:max-w-none">
               ${Object.entries(PIN_TYPES).filter(([k]) => k !== 'user').map(([k, v]) =>
                 `<option value="${k}">${v.emoji} ${v.label}</option>`
               ).join('')}
             </select>
-            <button id="add-pin-btn" onclick="togglePinMode()" class="btn btn-primary text-sm">
-              <i class="fa-solid fa-map-pin"></i> Add Pin
+            <button id="add-pin-btn" onclick="togglePinMode()" class="btn btn-primary text-xs sm:text-sm px-2 sm:px-3">
+              <i class="fa-solid fa-map-pin"></i> <span class="hidden sm:inline">Add Pin</span>
             </button>
-            <button onclick="clearAdminPins()" class="btn btn-ghost text-sm text-red-400">
+            <button onclick="clearAdminPins()" class="btn btn-ghost text-xs px-2 text-red-400">
               <i class="fa-solid fa-trash"></i>
             </button>
           ` : `
-            <button onclick="shareMyLocation()" class="btn btn-primary text-sm">
-              <i class="fa-solid fa-location-dot"></i> Share My Location
+            <button onclick="shareMyLocation()" class="btn btn-primary text-xs sm:text-sm px-3">
+              <i class="fa-solid fa-location-dot"></i> <span class="hidden sm:inline">Share My Location</span><span class="sm:hidden">Share</span>
             </button>
           `}
         </div>
@@ -54,16 +54,16 @@ export function renderMap(app) {
 
       <main class="p-4 md:p-6 space-y-4">
         ${isAdmin ? `
-        <div class="glass rounded-xl border border-white/8 p-3 flex flex-wrap gap-4 text-xs">
+        <div class="glass rounded-xl border border-white/8 p-2 sm:p-3 flex flex-wrap gap-2 sm:gap-4 text-xs">
           ${Object.entries(PIN_TYPES).map(([, v]) =>
-            `<span class="flex items-center gap-1.5"><span>${v.emoji}</span><span class="text-slate-300">${v.label}</span></span>`
+            `<span class="flex items-center gap-1"><span>${v.emoji}</span><span class="text-slate-300 hidden sm:inline">${v.label}</span></span>`
           ).join('')}
-          <span class="ml-auto text-slate-500 italic">Click on the map to place a pin</span>
+          <span class="ml-auto text-slate-500 italic hidden sm:inline">Click map to place pin</span>
         </div>
         ` : `
-        <div class="glass rounded-xl border border-white/8 p-3 text-xs text-slate-400 flex items-center gap-2">
+        <div class="glass rounded-xl border border-white/8 p-2 sm:p-3 text-xs text-slate-400 flex items-center gap-2">
           <i class="fa-solid fa-circle-info text-indigo-400"></i>
-          View exit routes and assembly areas. Use <strong class="text-white">Share My Location</strong> to mark your position on the admin's map.
+          <span>View exits and assembly areas. Tap <strong class="text-white">Share</strong> to mark your location.</span>
         </div>
         `}
 
@@ -77,7 +77,7 @@ export function renderMap(app) {
           </div>
 
           <!-- Viewport (clips overflow) -->
-          <div id="map-viewport" style="width:100%;height:70vh;overflow:hidden;position:relative;cursor:grab;">
+          <div id="map-viewport" style="width:100%;height:55vh;overflow:hidden;position:relative;cursor:grab;">
             <!-- Transformable inner wrap -->
             <div id="map-wrap" style="position:absolute;top:0;left:0;width:100%;transform-origin:0 0;will-change:transform;">
               <img id="campus-map" src="/images/dorsu-map.png" alt="DORSU Campus Map"

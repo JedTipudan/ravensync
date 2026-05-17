@@ -11,46 +11,46 @@ export function renderUsers(app) {
   app.innerHTML = `
     ${renderSidebar('/users')}
     <div class="main-content">
-      <header class="sticky top-0 z-40 glass border-b border-white/5 px-6 py-4 flex items-center justify-between">
-        <div class="flex items-center gap-3">
-          <button onclick="toggleSidebar()" class="mobile-menu-btn btn btn-ghost p-2 mr-1">
+      <header class="sticky top-0 z-40 glass border-b border-white/5 px-4 py-3 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <button onclick="toggleSidebar()" class="mobile-menu-btn btn btn-ghost p-2">
             <i class="fa-solid fa-bars"></i>
           </button>
           <div>
-            <h1 class="text-lg font-bold">User Management</h1>
-            <p class="text-xs text-slate-500">${isSuperAdmin ? 'Manage all users and assign roles' : 'Manage students'}</p>
+            <h1 class="text-base font-bold">User Management</h1>
           </div>
         </div>
-        <div class="flex items-center gap-3">
-          ${isSuperAdmin ? `<button onclick="showWordFilterPanel()" class="btn btn-ghost text-sm"><i class="fa-solid fa-shield-halved"></i> Word Filter</button>` : ''}
-          ${isSuperAdmin ? `<button onclick="showCreateUserModal()" class="btn btn-primary text-sm"><i class="fa-solid fa-user-plus"></i> Create User</button>` : ''}
+        <div class="flex items-center gap-2">
+          ${isSuperAdmin ? `<button onclick="showWordFilterPanel()" class="btn btn-ghost text-xs px-2 py-1.5"><i class="fa-solid fa-shield-halved"></i> <span class="hidden sm:inline">Filter</span></button>` : ''}
+          ${isSuperAdmin ? `<button onclick="showCreateUserModal()" class="btn btn-primary text-xs px-2 py-1.5"><i class="fa-solid fa-user-plus"></i> <span class="hidden sm:inline">Create</span></button>` : ''}
         </div>
       </header>
       </header>
 
-      <main class="p-6 space-y-5">
-        <div class="glass rounded-xl border border-white/8 p-4 flex flex-wrap gap-3">
-          <div class="relative flex-1 min-w-48">
+      <main class="p-3 sm:p-6 space-y-4">
+        <div class="glass rounded-xl border border-white/8 p-3 flex flex-wrap gap-2">
+          <div class="relative flex-1 min-w-0">
             <i class="fa-solid fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-sm"></i>
-            <input type="text" id="user-search" class="input pl-9 py-2" placeholder="Search users..."/>
+            <input type="text" id="user-search" class="input pl-9 py-2 text-sm" placeholder="Search users..."/>
           </div>
           ${isSuperAdmin ? `
-          <select id="role-filter" class="input w-auto py-2">
+          <select id="role-filter" class="input w-auto py-2 text-sm">
             <option value="">All Roles</option>
             <option value="superadmin">Super Admin</option>
-            <option value="admin">Instructor (Admin)</option>
+            <option value="admin">Instructor</option>
             <option value="user">Student</option>
           </select>` : ''}
         </div>
 
-        <div class="glass rounded-2xl border border-white/8 overflow-hidden">
+        <!-- Desktop table -->
+        <div class="glass rounded-2xl border border-white/8 overflow-hidden hidden sm:block">
           <div class="table-container">
             <table>
               <thead>
                 <tr>
                   <th>User</th>
                   <th>Role</th>
-                  <th>Department / Section</th>
+                  <th>Department</th>
                   <th>Status</th>
                   <th>Last Login</th>
                   <th>Actions</th>
@@ -62,6 +62,12 @@ export function renderUsers(app) {
             </table>
           </div>
         </div>
+
+        <!-- Mobile card list -->
+        <div id="users-cards" class="space-y-2 sm:hidden">
+          <div class="text-center py-8"><div class="spinner mx-auto"></div></div>
+        </div>
+
         <div id="user-pagination" class="flex justify-center gap-2"></div>
       </main>
     </div>
@@ -210,11 +216,7 @@ async function loadUsers(filters = {}) {
             </div>
           </div>
         </td>
-        <td>
-          <span class="px-2 py-1 rounded-full text-xs font-medium ${roleBadge[u.role] || roleBadge.user}">
-            ${roleLabel[u.role] || u.role}
-          </span>
-        </td>
+        <td><span class="px-2 py-1 rounded-full text-xs font-medium ${roleBadge[u.role] || roleBadge.user}">${roleLabel[u.role] || u.role}</span></td>
         <td class="text-sm text-slate-400">${u.course ? `${u.course}<br><span class="text-xs text-slate-500">${u.department || ''}</span>` : (u.department || u.organization || '—')}</td>
         <td>
           <div class="flex items-center gap-1.5">
@@ -231,6 +233,33 @@ async function loadUsers(filters = {}) {
         </td>
       </tr>
     `).join('');
+
+    // Mobile cards
+    const cards = document.getElementById('users-cards');
+    if (cards) {
+      cards.innerHTML = users.map(u => `
+        <div class="glass rounded-xl border border-white/8 p-3 flex items-center gap-3">
+          <div class="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-sm font-bold flex-shrink-0">
+            ${u.name?.charAt(0)?.toUpperCase() || '?'}
+          </div>
+          <div class="flex-1 min-w-0">
+            <div class="font-medium text-sm truncate">${u.name}</div>
+            <div class="text-xs text-slate-500">@${u.username} · <span class="${roleBadge[u.role]?.split(' ')[1] || 'text-slate-400'}">${roleLabel[u.role] || u.role}</span></div>
+            <div class="text-xs text-slate-500 truncate">${u.department || u.organization || ''}</div>
+          </div>
+          <div class="flex flex-col items-end gap-1.5">
+            <div class="flex items-center gap-1">
+              <div class="w-1.5 h-1.5 rounded-full ${u.isActive ? 'bg-emerald-400' : 'bg-red-400'}"></div>
+              <span class="text-xs ${u.isActive ? 'text-emerald-400' : 'text-red-400'}">${u.isActive ? 'Active' : 'Off'}</span>
+            </div>
+            <button onclick="toggleUserStatus('${u._id}', ${u.isActive})"
+              class="text-xs ${u.isActive ? 'text-red-400' : 'text-emerald-400'}">
+              ${u.isActive ? 'Deactivate' : 'Activate'}
+            </button>
+          </div>
+        </div>
+      `).join('');
+    }
   } catch (err) {
     tbody.innerHTML = `<tr><td colspan="6" class="text-center py-8 text-red-400">Failed to load users</td></tr>`;
   }

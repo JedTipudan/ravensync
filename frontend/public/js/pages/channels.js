@@ -40,25 +40,30 @@ export function renderChannels(app) {
   app.innerHTML = `
     ${renderSidebar('/channels')}
     <div class="main-content flex flex-col" style="height:100vh">
-      <header class="sticky top-0 z-40 glass border-b border-white/5 px-6 py-4 flex items-center justify-between flex-shrink-0">
-        <div class="flex items-center gap-3">
-          <button onclick="toggleSidebar()" class="mobile-menu-btn btn btn-ghost p-2 mr-1">
+      <header class="sticky top-0 z-40 glass border-b border-white/5 px-4 py-3 flex items-center justify-between flex-shrink-0">
+        <div class="flex items-center gap-2">
+          <button onclick="toggleSidebar()" class="mobile-menu-btn btn btn-ghost p-2">
             <i class="fa-solid fa-bars"></i>
           </button>
+          <button id="back-to-channels" onclick="showChannelList()" class="hidden btn btn-ghost p-2 text-sm">
+            <i class="fa-solid fa-arrow-left"></i>
+          </button>
           <div>
-            <h1 class="text-lg font-bold">Communication Channels</h1>
-            <p class="text-xs text-slate-500">Real-time messaging and broadcasts</p>
+            <h1 class="text-base font-bold" id="header-title">Channels</h1>
+            <p class="text-xs text-slate-500 hidden sm:block">Real-time messaging</p>
           </div>
         </div>
-        <button onclick="openCreateChannel()" class="btn btn-primary text-sm">
-          <i class="fa-solid fa-plus"></i> New Channel
-        </button>
+        <div class="flex items-center gap-2">
+          <button onclick="openCreateChannel()" class="btn btn-primary text-sm">
+            <i class="fa-solid fa-plus"></i> <span class="hidden sm:inline">New Channel</span>
+          </button>
+        </div>
       </header>
 
-      <div class="flex flex-1 overflow-hidden">
+      <div class="flex flex-1 overflow-hidden relative">
         <!-- Channel list -->
-        <div class="w-72 border-r border-white/5 flex flex-col flex-shrink-0">
-          <div class="p-3 border-b border-white/5">
+        <div id="channel-panel" class="w-full sm:w-72 border-r border-white/5 flex flex-col flex-shrink-0 absolute sm:relative inset-0 sm:inset-auto z-10" style="background:var(--bg-primary)">
+          <div class="p-2 border-b border-white/5">
             <input type="text" class="input py-2 text-sm" placeholder="Search channels..." id="channel-search"/>
           </div>
           <div id="channel-list" class="flex-1 overflow-y-auto p-2 space-y-1">
@@ -67,40 +72,69 @@ export function renderChannels(app) {
         </div>
 
         <!-- Chat area -->
-        <div class="flex-1 flex flex-col overflow-hidden">
-          <div id="chat-header" class="px-5 py-3 border-b border-white/5 flex items-center gap-3 flex-shrink-0">
+        <div id="chat-panel" class="flex-1 flex flex-col overflow-hidden hidden sm:flex">
+          <div id="chat-header" class="px-4 py-3 border-b border-white/5 flex items-center gap-3 flex-shrink-0">
             <div class="text-slate-500 text-sm">Select a channel to start messaging</div>
           </div>
-          <div id="messages-container" class="flex-1 overflow-y-auto p-4 space-y-3">
+          <div id="messages-container" class="flex-1 overflow-y-auto p-3 space-y-2">
             <div class="text-center py-16 text-slate-600">
               <div class="text-5xl mb-3">💬</div>
-              <p>Select a channel to view messages</p>
+              <p class="text-sm">Select a channel to view messages</p>
             </div>
           </div>
-          <div id="message-input-area" class="p-4 border-t border-white/5 hidden"></div>
+          <div id="message-input-area" class="p-3 border-t border-white/5 hidden"></div>
         </div>
+      </div>
+    </div>
+
+    <!-- Edit Channel Modal -->
+    <div id="edit-channel-modal" class="modal-overlay hidden">
+      <div class="modal p-5">
+        <div class="flex items-center justify-between mb-5">
+          <h2 class="text-lg font-bold">✏️ Edit Channel</h2>
+          <button onclick="document.getElementById('edit-channel-modal').classList.add('hidden')" class="text-slate-400 hover:text-white text-xl">×</button>
+        </div>
+        <form id="edit-channel-form" class="space-y-4">
+          <input type="hidden" id="edit-channel-id"/>
+          <div>
+            <label class="block text-sm font-medium text-slate-300 mb-1">Channel Name</label>
+            <input type="text" id="edit-channel-name" class="input" required/>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-slate-300 mb-1">Description</label>
+            <input type="text" id="edit-channel-desc" class="input"/>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-slate-300 mb-1">Icon</label>
+            <input type="text" id="edit-channel-icon" class="input"/>
+          </div>
+          <div class="flex gap-3 pt-1">
+            <button type="submit" class="btn btn-primary flex-1">Save</button>
+            <button type="button" onclick="document.getElementById('edit-channel-modal').classList.add('hidden')" class="btn btn-ghost">Cancel</button>
+          </div>
+        </form>
       </div>
     </div>
 
     <!-- Create Channel Modal -->
     <div id="create-channel-modal" class="modal-overlay hidden">
-      <div class="modal p-6">
-        <div class="flex items-center justify-between mb-6">
-          <h2 class="text-xl font-bold">📡 Create Channel</h2>
+      <div class="modal p-5">
+        <div class="flex items-center justify-between mb-5">
+          <h2 class="text-lg font-bold">📡 Create Channel</h2>
           <button onclick="closeChannelModal()" class="text-slate-400 hover:text-white text-xl">×</button>
         </div>
         <form id="channel-form" class="space-y-4">
           <div>
-            <label class="block text-sm font-medium text-slate-300 mb-2">Channel Name</label>
+            <label class="block text-sm font-medium text-slate-300 mb-1">Channel Name</label>
             <input type="text" id="channel-name" class="input" placeholder="e.g. Typhoon Response Team" required/>
           </div>
           <div>
-            <label class="block text-sm font-medium text-slate-300 mb-2">Description</label>
+            <label class="block text-sm font-medium text-slate-300 mb-1">Description</label>
             <input type="text" id="channel-desc" class="input" placeholder="Channel purpose..."/>
           </div>
-          <div class="grid grid-cols-2 gap-4">
+          <div class="grid grid-cols-2 gap-3">
             <div>
-              <label class="block text-sm font-medium text-slate-300 mb-2">Type</label>
+              <label class="block text-sm font-medium text-slate-300 mb-1">Type</label>
               <select id="channel-type" class="input">
                 <option value="public">🌐 Public</option>
                 <option value="private">🔒 Private</option>
@@ -108,12 +142,12 @@ export function renderChannels(app) {
               </select>
             </div>
             <div>
-              <label class="block text-sm font-medium text-slate-300 mb-2">Icon</label>
-              <input type="text" id="channel-icon" class="input" value="📡" placeholder="Emoji icon"/>
+              <label class="block text-sm font-medium text-slate-300 mb-1">Icon</label>
+              <input type="text" id="channel-icon" class="input" value="📡" placeholder="Emoji"/>
             </div>
           </div>
-          <div class="flex gap-3 pt-2">
-            <button type="submit" class="btn btn-primary flex-1">Create Channel</button>
+          <div class="flex gap-3 pt-1">
+            <button type="submit" class="btn btn-primary flex-1">Create</button>
             <button type="button" onclick="closeChannelModal()" class="btn btn-ghost">Cancel</button>
           </div>
         </form>
@@ -123,6 +157,31 @@ export function renderChannels(app) {
 
   initSidebar();
   loadChannels();
+
+  // Mobile: show channel list, hide chat
+  window.showChannelList = () => {
+    document.getElementById('channel-panel')?.classList.remove('hidden');
+    document.getElementById('chat-panel')?.classList.add('hidden');
+    document.getElementById('chat-panel')?.classList.remove('flex');
+    document.getElementById('back-to-channels')?.classList.add('hidden');
+    document.getElementById('header-title').textContent = 'Channels';
+    if (window.innerWidth < 640) {
+      document.getElementById('channel-panel').style.display = 'flex';
+      document.getElementById('channel-panel').style.flexDirection = 'column';
+    }
+  };
+
+  // Mobile: hide channel list, show chat
+  window.showChatPanel = (name) => {
+    if (window.innerWidth < 640) {
+      document.getElementById('channel-panel').style.display = 'none';
+      const chat = document.getElementById('chat-panel');
+      chat?.classList.remove('hidden');
+      chat?.classList.add('flex');
+      document.getElementById('back-to-channels')?.classList.remove('hidden');
+      document.getElementById('header-title').textContent = name;
+    }
+  };
 
   // Auto-subscribe to emergency channel on load
   on('EMERGENCY_CHANNEL', (data) => {
@@ -177,6 +236,42 @@ export function renderChannels(app) {
   window.closeChannelModal = () => document.getElementById('create-channel-modal').classList.add('hidden');
   window.selectChannel = selectChannel;
   window.sendMessage = sendMessage;
+
+  window.openEditChannel = (id, name, desc, icon) => {
+    document.getElementById('edit-channel-id').value = id;
+    document.getElementById('edit-channel-name').value = name;
+    document.getElementById('edit-channel-desc').value = desc;
+    document.getElementById('edit-channel-icon').value = icon;
+    document.getElementById('edit-channel-modal').classList.remove('hidden');
+  };
+
+  window.confirmDeleteChannel = async (id, name) => {
+    if (!confirm(`Delete channel "${name}"? This cannot be undone.`)) return;
+    try {
+      await api.delete(`/channels/${id}`);
+      showToast('Channel deleted', 'success');
+      if (activeChannel === id) {
+        activeChannel = null;
+        document.getElementById('chat-panel').classList.add('hidden');
+      }
+      loadChannels();
+    } catch (err) { showToast(err.message || 'Failed to delete', 'error'); }
+  };
+
+  document.getElementById('edit-channel-form')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const id = document.getElementById('edit-channel-id').value;
+    try {
+      await api.patch(`/channels/${id}`, {
+        name: document.getElementById('edit-channel-name').value,
+        description: document.getElementById('edit-channel-desc').value,
+        icon: document.getElementById('edit-channel-icon').value,
+      });
+      showToast('Channel updated', 'success');
+      document.getElementById('edit-channel-modal').classList.add('hidden');
+      loadChannels();
+    } catch (err) { showToast(err.message || 'Failed to update', 'error'); }
+  });
 }
 
 async function loadChannels() {
@@ -204,14 +299,24 @@ async function loadChannels() {
     };
 
     list.innerHTML = res.data.map(ch => `
-      <div onclick="selectChannel('${ch._id}', '${ch.name.replace(/'/g, "\\'")}', '${ch.icon || '📡'}')"
-           class="nav-item cursor-pointer ${activeChannel === ch._id ? 'active' : ''}" id="ch-${ch._id}">
-        <span class="text-lg">${ch.icon || '📡'}</span>
-        <div class="flex-1 min-w-0">
+      <div class="nav-item cursor-pointer group/ch ${activeChannel === ch._id ? 'active' : ''}" id="ch-${ch._id}">
+        <span class="text-lg" onclick="selectChannel('${ch._id}', '${ch.name.replace(/'/g, "\\'")}'  , '${ch.icon || '📡'}')">${ch.icon || '📡'}</span>
+        <div class="flex-1 min-w-0" onclick="selectChannel('${ch._id}', '${ch.name.replace(/'/g, "\\'")}'  , '${ch.icon || '📡'}')">
           <div class="text-sm font-medium truncate">${ch.name}</div>
           <div class="text-xs text-slate-500">${ch.members?.length || 0} members</div>
         </div>
         ${typeBadge(ch)}
+        ${isAdmin() ? `
+        <div class="flex gap-1 opacity-0 group-hover/ch:opacity-100 transition-opacity flex-shrink-0">
+          <button onclick="event.stopPropagation();openEditChannel('${ch._id}','${ch.name.replace(/'/g,"\\'")}'  ,'${ch.description?.replace(/'/g,"\\'") || ''}','${ch.icon || '📡'}')" 
+            class="w-6 h-6 rounded-full bg-white/10 hover:bg-amber-500/40 flex items-center justify-center text-slate-400 hover:text-amber-300" title="Edit">
+            <i class="fa-solid fa-pen text-xs"></i>
+          </button>
+          <button onclick="event.stopPropagation();confirmDeleteChannel('${ch._id}','${ch.name.replace(/'/g,"\\'")}'  )" 
+            class="w-6 h-6 rounded-full bg-white/10 hover:bg-red-500/40 flex items-center justify-center text-slate-400 hover:text-red-400" title="Delete">
+            <i class="fa-solid fa-trash text-xs"></i>
+          </button>
+        </div>` : ''}
       </div>
     `).join('');
   } catch (err) {
@@ -223,24 +328,31 @@ async function selectChannel(id, name, icon) {
   activeChannel = id;
   subscribeChannel(id);
 
-  // Grab channel data from already-loaded list
+  // Show chat panel on mobile
+  window.showChatPanel?.(name);
+
   const listRes = await api.get('/channels').catch(() => ({ data: [] }));
   activeChannelData = listRes.data.find(c => c._id === id) || { _id: id, name, icon, type: 'public' };
 
   document.querySelectorAll('[id^="ch-"]').forEach(el => el.classList.remove('active'));
   document.getElementById(`ch-${id}`)?.classList.add('active');
 
+  // Make chat panel visible on desktop too
+  const chatPanel = document.getElementById('chat-panel');
+  chatPanel?.classList.remove('hidden');
+  chatPanel?.classList.add('flex');
+
   const readOnly = !isAdmin() && (activeChannelData.type === 'emergency' || activeChannelData.type === 'broadcast');
   const typeLabels = { emergency: '🚨 Emergency', broadcast: '📢 Broadcast', public: '🌐 Public', private: '🔒 Private' };
 
   document.getElementById('chat-header').innerHTML = `
-    <span class="text-2xl">${icon}</span>
-    <div>
-      <div class="font-bold">${name}</div>
-      <div class="text-xs text-slate-500">${typeLabels[activeChannelData.type] || activeChannelData.type} channel</div>
+    <span class="text-xl">${icon}</span>
+    <div class="flex-1 min-w-0">
+      <div class="font-bold text-sm truncate">${name}</div>
+      <div class="text-xs text-slate-500">${typeLabels[activeChannelData.type] || activeChannelData.type}</div>
     </div>
-    ${readOnly ? `<div class="ml-3 px-2 py-1 rounded-full bg-red-500/10 border border-red-500/20 text-red-400 text-xs flex items-center gap-1.5"><i class="fa-solid fa-lock text-xs"></i> Read-only</div>` : ''}
-    <div class="ml-auto flex items-center gap-1.5">
+    ${readOnly ? `<div class="px-2 py-1 rounded-full bg-red-500/10 border border-red-500/20 text-red-400 text-xs flex items-center gap-1"><i class="fa-solid fa-lock text-xs"></i> Read-only</div>` : ''}
+    <div class="flex items-center gap-1.5 flex-shrink-0">
       <div class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></div>
       <span class="text-xs text-emerald-400">Live</span>
     </div>
@@ -268,10 +380,10 @@ async function selectChannel(id, name, icon) {
       _lockInputMuted(mutedUntil);
     } else {
       inputArea.innerHTML = `
-        <div class="flex gap-3 items-center">
-          <input type="text" id="message-input" class="input flex-1" placeholder="Type a message... (Enter to send)" maxlength="500"/>
-          <span id="char-count" class="text-xs text-slate-600 w-12 text-right flex-shrink-0">0/500</span>
-          <button onclick="sendMessage()" class="btn btn-primary px-4">
+        <div class="flex gap-2 items-center">
+          <input type="text" id="message-input" class="input flex-1 text-sm" placeholder="Message..." maxlength="500"/>
+          <span id="char-count" class="text-xs text-slate-600 w-10 text-right flex-shrink-0 hidden sm:block">0/500</span>
+          <button onclick="sendMessage()" class="btn btn-primary px-3">
             <i class="fa-solid fa-paper-plane"></i>
           </button>
         </div>
@@ -311,6 +423,7 @@ function renderMessage(msg) {
   const isAlert = msg.type === 'alert';
   const isAdminUser = isAdmin();
   const canDelete = isOwn || isAdminUser;
+  const canEdit = isOwn || isAdminUser;
   const priorityBorder = { critical: 'border-l-4 border-red-500', high: 'border-l-4 border-yellow-500' }[msg.priority] || '';
 
   const quotedBubble = msg.replyTo?._id ? `
@@ -327,7 +440,7 @@ function renderMessage(msg) {
         class="w-7 h-7 rounded-full bg-white/10 hover:bg-indigo-500/40 flex items-center justify-center text-slate-400 hover:text-white" title="Reply">
         <i class="fa-solid fa-reply text-xs"></i>
       </button>
-      ${isOwn ? `
+      ${canEdit ? `
       <button onclick="startEditMessage('${msg._id}')"
         class="w-7 h-7 rounded-full bg-white/10 hover:bg-amber-500/40 flex items-center justify-center text-slate-400 hover:text-amber-300" title="Edit">
         <i class="fa-solid fa-pen text-xs"></i>
@@ -341,21 +454,44 @@ function renderMessage(msg) {
   ` : '';
 
   return `
-    <div class="flex ${isOwn ? 'justify-end' : 'justify-start'} gap-3 group" id="msg-${msg._id}">
-      ${!isOwn ? `<div class="w-8 h-8 rounded-full ${isAlert ? 'bg-red-500' : 'bg-gradient-to-br from-indigo-500 to-purple-600'} flex items-center justify-center text-xs font-bold flex-shrink-0 mt-1">${isAlert ? '🚨' : (msg.sender?.name?.charAt(0) || '?')}</div>` : ''}
-      <div class="max-w-xs lg:max-w-md">
+    <div class="flex ${isOwn ? 'justify-end' : 'justify-start'} gap-2 group" id="msg-${msg._id}">
+      ${!isOwn ? `<div class="w-7 h-7 rounded-full ${isAlert ? 'bg-red-500' : 'bg-gradient-to-br from-indigo-500 to-purple-600'} flex items-center justify-center text-xs font-bold flex-shrink-0 mt-1">${isAlert ? '🚨' : (msg.sender?.name?.charAt(0) || '?')}</div>` : ''}
+      <div class="max-w-[72vw] sm:max-w-xs lg:max-w-md">
         ${!isOwn ? `<div class="text-xs text-slate-500 mb-1 ml-1">${isAlert ? '🚨 Emergency Alert' : (msg.sender?.name || 'Unknown')}</div>` : ''}
         <div class="relative">
-          ${actionBtns}
-          <div class="px-4 py-2.5 rounded-2xl ${isOwn ? 'bg-indigo-600 text-white rounded-tr-sm' : `glass border border-white/8 rounded-tl-sm ${isAlert ? 'border-red-500/40 bg-red-500/5' : ''}`} ${priorityBorder}">
-            ${isAlert ? '<div class="text-xs font-bold text-red-400 mb-1">🚨 EMERGENCY BROADCAST</div>' : (msg.priority === 'critical' ? '<div class="text-xs font-bold text-red-400 mb-1">⚠️ CRITICAL</div>' : '')}
+          <div class="px-3 py-2 rounded-2xl text-sm ${isOwn ? 'bg-indigo-600 text-white rounded-tr-sm' : `glass border border-white/8 rounded-tl-sm ${isAlert ? 'border-red-500/40 bg-red-500/5' : ''}`} ${priorityBorder}">
+            ${isAlert ? '<div class="text-xs font-bold text-red-400 mb-1">🚨 EMERGENCY</div>' : (msg.priority === 'critical' ? '<div class="text-xs font-bold text-red-400 mb-1">⚠️ CRITICAL</div>' : '')}
             ${quotedBubble}
-            <p class="text-sm whitespace-pre-line">${msg.content}</p>
-            ${msg.hasProfanity ? '<div class="text-xs text-amber-400/70 mt-1 flex items-center gap-1"><i class="fa-solid fa-triangle-exclamation text-xs"></i> Message was censored</div>' : ''}
-            ${msg.isEdited ? `<div class="text-xs text-slate-500 mt-1 italic">edited</div>` : ''}
+            <p class="text-sm whitespace-pre-line break-words">${msg.content}</p>
+            ${msg.hasProfanity ? '<div class="text-xs text-amber-400/70 mt-1"><i class="fa-solid fa-triangle-exclamation text-xs"></i> Censored</div>' : ''}
+            ${msg.isEdited ? `<div class="text-xs text-slate-500 mt-0.5 italic">edited</div>` : ''}
           </div>
+          <!-- Action buttons — shown below message on mobile, hover on desktop -->
+          ${!isAlert ? `
+          <div class="flex gap-1 mt-1 ${isOwn ? 'justify-end' : 'justify-start'} sm:hidden">
+            <button onclick="setReply('${msg._id}', '${(msg.sender?.name || 'Unknown').replace(/'/g, "\\'")}')"
+              class="px-2 py-0.5 rounded-full bg-white/10 text-slate-400 text-xs">↩ Reply</button>
+            ${canEdit ? `<button onclick="startEditMessage('${msg._id}')" class="px-2 py-0.5 rounded-full bg-white/10 text-slate-400 text-xs">✏️</button>` : ''}
+            ${canDelete ? `<button onclick="confirmDeleteMessage('${msg._id}')" class="px-2 py-0.5 rounded-full bg-white/10 text-red-400 text-xs">🗑️</button>` : ''}
+          </div>
+          <div class="absolute ${isOwn ? '-left-20' : '-right-20'} top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity gap-1 hidden sm:flex">
+            <button onclick="setReply('${msg._id}', '${(msg.sender?.name || 'Unknown').replace(/'/g, "\\'")}')"
+              class="w-7 h-7 rounded-full bg-white/10 hover:bg-indigo-500/40 flex items-center justify-center text-slate-400 hover:text-white" title="Reply">
+              <i class="fa-solid fa-reply text-xs"></i>
+            </button>
+            ${canEdit ? `
+            <button onclick="startEditMessage('${msg._id}')"
+              class="w-7 h-7 rounded-full bg-white/10 hover:bg-amber-500/40 flex items-center justify-center text-slate-400 hover:text-amber-300" title="Edit">
+              <i class="fa-solid fa-pen text-xs"></i>
+            </button>` : ''}
+            ${canDelete ? `
+            <button onclick="confirmDeleteMessage('${msg._id}')"
+              class="w-7 h-7 rounded-full bg-white/10 hover:bg-red-500/40 flex items-center justify-center text-slate-400 hover:text-red-400" title="Delete">
+              <i class="fa-solid fa-trash text-xs"></i>
+            </button>` : ''}
+          </div>` : ''}
         </div>
-        <div class="text-xs text-slate-600 mt-1 ${isOwn ? 'text-right' : 'ml-1'}">${timeAgo(msg.createdAt)}</div>
+        <div class="text-xs text-slate-600 mt-0.5 ${isOwn ? 'text-right' : 'ml-1'}">${timeAgo(msg.createdAt)}</div>
       </div>
     </div>
   `;
@@ -470,7 +606,7 @@ window.startEditMessage = (msgId) => {
   const currentText = p?.textContent?.trim() || '';
 
   // Replace the <p> with an inline edit input
-  const bubble = p.closest('.px-4');
+  const bubble = p.closest('.px-3');
   const originalHTML = bubble.innerHTML;
 
   bubble.innerHTML = `
@@ -589,12 +725,11 @@ function _lockInputMuted(muteEndsAt) {
   const render = () => {
     const remaining = endsAt ? Math.max(0, endsAt - Date.now()) : 0;
     if (remaining <= 0) {
-      // Restore input
       inputArea.innerHTML = `
-        <div class="flex gap-3 items-center">
-          <input type="text" id="message-input" class="input flex-1" placeholder="Type a message... (Enter to send)" maxlength="500"/>
-          <span id="char-count" class="text-xs text-slate-600 w-12 text-right flex-shrink-0">0/500</span>
-          <button onclick="sendMessage()" class="btn btn-primary px-4"><i class="fa-solid fa-paper-plane"></i></button>
+        <div class="flex gap-2 items-center">
+          <input type="text" id="message-input" class="input flex-1 text-sm" placeholder="Message..." maxlength="500"/>
+          <span id="char-count" class="text-xs text-slate-600 w-10 text-right flex-shrink-0 hidden sm:block">0/500</span>
+          <button onclick="sendMessage()" class="btn btn-primary px-3"><i class="fa-solid fa-paper-plane"></i></button>
         </div>
       `;
       const input = document.getElementById('message-input');

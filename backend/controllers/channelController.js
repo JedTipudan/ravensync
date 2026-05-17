@@ -189,7 +189,7 @@ exports.editMessage = async (req, res, next) => {
     const isAdmin = req.user.role === 'admin' || req.user.role === 'superadmin';
     const message = await Message.findById(req.params.msgId);
     if (!message) return res.status(404).json({ success: false, message: 'Message not found' });
-    if (message.sender.toString() !== req.user._id.toString())
+    if (message.sender.toString() !== req.user._id.toString() && !isAdmin)
       return res.status(403).json({ success: false, message: 'You can only edit your own messages' });
     if (message.type === 'alert')
       return res.status(403).json({ success: false, message: 'System messages cannot be edited' });
@@ -229,6 +229,25 @@ exports.editMessage = async (req, res, next) => {
     }
 
     res.json({ success: true, warned: hasProfanity, warningInfo, data: message });
+  } catch (error) { next(error); }
+};
+
+exports.updateChannel = async (req, res, next) => {
+  try {
+    if (req.user.role === 'user') return res.status(403).json({ success: false, message: 'Admins only' });
+    const { name, description, icon, color } = req.body;
+    const channel = await Channel.findByIdAndUpdate(req.params.id, { name, description, icon, color }, { new: true });
+    if (!channel) return res.status(404).json({ success: false, message: 'Channel not found' });
+    res.json({ success: true, data: channel });
+  } catch (error) { next(error); }
+};
+
+exports.deleteChannel = async (req, res, next) => {
+  try {
+    if (req.user.role === 'user') return res.status(403).json({ success: false, message: 'Admins only' });
+    const channel = await Channel.findByIdAndUpdate(req.params.id, { isActive: false }, { new: true });
+    if (!channel) return res.status(404).json({ success: false, message: 'Channel not found' });
+    res.json({ success: true });
   } catch (error) { next(error); }
 };
 

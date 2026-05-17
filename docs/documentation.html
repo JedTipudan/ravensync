@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<title>RavenSync — System Documentation</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Segoe UI', Arial, sans-serif; background: #fff; color: #1e293b; font-size: 13px; line-height: 1.6; }
+.cover { background: linear-gradient(135deg, #4f46e5, #7c3aed); color: white; min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 3rem; page-break-after: always; }
+.cover .logo { font-size: 5rem; margin-bottom: 1rem; }
+.cover h1 { font-size: 3rem; font-weight: 800; margin-bottom: 0.5rem; }
+.cover h2 { font-size: 1.3rem; font-weight: 400; opacity: 0.85; margin-bottom: 2rem; }
+.cover .meta { background: rgba(255,255,255,0.15); border-radius: 12px; padding: 1.5rem 2.5rem; }
+.cover .meta p { margin: 0.3rem 0; font-size: 0.95rem; }
+.page { padding: 2.5rem 3rem; page-break-before: always; }
+.toc { padding: 2.5rem 3rem; page-break-after: always; }
+.toc h2 { font-size: 1.5rem; font-weight: 700; color: #4f46e5; border-bottom: 3px solid #4f46e5; padding-bottom: 0.5rem; margin-bottom: 1.5rem; }
+.toc ol { padding-left: 1.5rem; }
+.toc li { margin: 0.4rem 0; font-size: 0.95rem; }
+.sec-title { font-size: 1.5rem; font-weight: 800; color: #4f46e5; border-left: 5px solid #4f46e5; padding-left: 1rem; margin-bottom: 1.5rem; }
+.sub { font-size: 1rem; font-weight: 700; color: #1e293b; margin: 1.2rem 0 0.6rem; border-bottom: 1px solid #e2e8f0; padding-bottom: 0.25rem; }
+p { margin-bottom: 0.6rem; color: #334155; }
+ul, ol { padding-left: 1.5rem; margin-bottom: 0.6rem; }
+li { margin: 0.25rem 0; color: #334155; }
+table { width: 100%; border-collapse: collapse; margin: 0.8rem 0; font-size: 0.82rem; }
+th { background: #4f46e5; color: white; padding: 0.5rem 0.75rem; text-align: left; }
+td { padding: 0.45rem 0.75rem; border-bottom: 1px solid #e2e8f0; }
+tr:nth-child(even) td { background: #f8fafc; }
+.badge { display: inline-block; padding: 0.1rem 0.5rem; border-radius: 20px; font-size: 0.72rem; font-weight: 600; }
+.b-blue { background: #dbeafe; color: #1d4ed8; }
+.b-green { background: #dcfce7; color: #15803d; }
+.b-red { background: #fee2e2; color: #b91c1c; }
+.b-purple { background: #ede9fe; color: #6d28d9; }
+.info { background: #eff6ff; border-left: 4px solid #3b82f6; padding: 0.6rem 1rem; border-radius: 0 8px 8px 0; margin: 0.6rem 0; font-size: 0.85rem; }
+.arch { background: #0f172a; color: #94a3b8; font-family: 'Courier New', monospace; font-size: 0.72rem; padding: 1rem 1.2rem; border-radius: 8px; margin: 0.8rem 0; white-space: pre; line-height: 1.7; }
+.flow { display: flex; align-items: center; gap: 0.4rem; margin: 0.35rem 0; flex-wrap: wrap; }
+.fb { background: #4f46e5; color: white; padding: 0.2rem 0.6rem; border-radius: 5px; font-size: 0.75rem; font-weight: 600; }
+.fb.g { background: #059669; }
+.fb.r { background: #dc2626; }
+.fb.o { background: #d97706; }
+.fa { color: #94a3b8; }
+@media print { .page, .toc { page-break-before: always; } }
+</style>
+</head>
+<body>
+
+<div class="cover">
+  <div class="logo">🦅</div>
+  <h1>RavenSync</h1>
+  <h2>Enterprise Emergency Communication Platform</h2>
+  <div class="meta">
+    <p><strong>Document:</strong> System Documentation</p>
+    <p><strong>Version:</strong> 1.0.0</p>
+    <p><strong>Institution:</strong> DORSU — Davao Oriental State University</p>
+    <p><strong>Year:</strong> 2025</p>
+    <p><strong>Stack:</strong> Node.js · MongoDB · Kafka · WebSocket · Vanilla JS</p>
+  </div>
+</div>
+
+<div class="toc">
+  <h2>Table of Contents</h2>
+  <ol>
+    <li>System Overview
+      <ol><li>Purpose of the System</li><li>Target Users</li></ol>
+    </li>
+    <li>System Architecture
+      <ol><li>Client-Server Diagram</li><li>Message Flow</li><li>Technology Stack</li></ol>
+    </li>
+    <li>Feature Descriptions
+      <ol><li>Messaging System</li><li>XML Usage</li><li>Parsing Methods</li><li>XSLT Transformations</li><li>Scripting Integration</li></ol>
+    </li>
+    <li>Technical Explanation
+      <ol><li>How Each Requirement Was Implemented</li><li>Challenges and Solutions</li></ol>
+    </li>
+    <li>Screenshots / Outputs
+      <ol><li>System Interface</li><li>XML File Samples</li><li>API Endpoints Reference</li></ol>
+    </li>
+  </ol>
+</div>
+
+<!-- SECTION 1 -->
+<div class="page" id="s1">
+  <div class="sec-title">1. System Overview</div>
+
+  <div class="sub">1.1 Purpose of the System</div>
+  <p>RavenSync is a real-time emergency communication and disaster response management platform designed for educational institutions, barangays, and local communities. It enables administrators and instructors to broadcast emergency alerts instantly, manage communication channels, and monitor the safety status of all users during a crisis.</p>
+  <p>The platform solves a critical gap in school emergency preparedness — the lack of a centralized, real-time system that works even without internet connectivity. RavenSync operates on a local network (LAN), meaning it functions fully offline as long as the server machine is running, making it ideal for disaster scenarios where internet access is disrupted.</p>
+
+  <div class="info"><strong>Core Mission:</strong> Deliver emergency alerts in under 500ms to all connected users, allow students to report their safety status, and give administrators a live command dashboard to coordinate response — all from a single web application.</div>
+
+  <div class="sub">Key Capabilities</div>
+  <ul>
+    <li>Real-time emergency alert broadcasting via WebSocket and Kafka message broker</li>
+    <li>Student safety status reporting — Safe, Need Help, or Damage Report</li>
+    <li>Interactive campus map with admin evacuation pins and live user location sharing</li>
+    <li>Structured XML data management with DOM/SAX parsing and XSLT transformation</li>
+    <li>Automated PowerShell scripts for backups, health checks, and maintenance</li>
+    <li>Role-based access control — Super Admin, Admin/Instructor, Student</li>
+    <li>Progressive Web App (PWA) — installable on any device, works offline</li>
+    <li>Light and dark mode, fully responsive down to iPhone SE (375px)</li>
+  </ul>
+
+  <div class="sub">1.2 Target Users</div>
+  <table>
+    <tr><th>Role</th><th>Credentials</th><th>Capabilities</th></tr>
+    <tr>
+      <td><span class="badge b-red">Super Admin</span></td>
+      <td>superadmin / super123</td>
+      <td>Full system access — manage users, roles, word filters, all admin features</td>
+    </tr>
+    <tr>
+      <td><span class="badge b-blue">Admin / Instructor</span></td>
+      <td>admin / admin</td>
+      <td>Create alerts, manage channels, view campus map, run automation scripts</td>
+    </tr>
+    <tr>
+      <td><span class="badge b-green">Student / User</span></td>
+      <td>student / student123</td>
+      <td>Receive alerts, respond with safety status, view campus map, share location</td>
+    </tr>
+  </table>
+</div>
+
+<!-- SECTION 2 -->
+<div class="page" id="s2">
+  <div class="sec-title">2. System Architecture</div>
+
+  <div class="sub">2.1 Client-Server Architecture</div>
+  <div class="arch">
+┌──────────────────────────── CLIENT LAYER ────────────────────────────┐
+│                                                                       │
+│   [Admin Browser]      [Student Browser]      [Mobile PWA]           │
+│   Vanilla JS SPA       Vanilla JS SPA         Service Worker         │
+│   ES Modules           Tailwind CSS           Offline Cache          │
+│                                                                       │
+└───────────────────────────────┬───────────────────────────────────────┘
+                                │  HTTP REST + WebSocket (ws://)
+┌───────────────────────────────▼───────────────────────────────────────┐
+│                         SERVER LAYER                                  │
+│                                                                       │
+│   Node.js + Express.js  (Port 5000)                                  │
+│   ┌─────────────┐  ┌──────────────┐  ┌──────────────────────────┐   │
+│   │  REST API   │  │  WebSocket   │  │  Static File Server      │   │
+│   │  /api/*     │  │  Server /ws  │  │  /frontend/public        │   │
+│   └─────────────┘  └──────────────┘  └──────────────────────────┘   │
+│   Middleware: Helmet · CORS · Rate Limit · Mongo Sanitize · Morgan   │
+│   ┌──────────────┐  ┌──────────────┐  ┌──────────────────────────┐  │
+│   │  Kafka/Queue │  │  XML Engine  │  │  PowerShell + node-cron  │  │
+│   │  kafkajs     │  │  DOM+SAX+XSL │  │  Automation Scripts      │  │
+│   └──────────────┘  └──────────────┘  └──────────────────────────┘  │
+└───────────────────────────────┬───────────────────────────────────────┘
+                                │
+┌───────────────────────────────▼───────────────────────────────────────┐
+│                          DATA LAYER                                   │
+│   ┌──────────────────────┐      ┌──────────────────────────────────┐  │
+│   │  MongoDB (Mongoose)  │      │  Kafka / RedPanda                │  │
+│   │  users · alerts      │      │  Topics: emergency.alerts        │  │
+│   │  channels · messages │      │          notifications           │  │
+│   │  announcements       │      │          broadcasts              │  │
+│   │  auditlogs           │      │          dead.letter             │  │
+│   │  locationpins        │      │  Fallback: in-memory queue       │  │
+│   └──────────────────────┘      └──────────────────────────────────┘  │
+└───────────────────────────────────────────────────────────────────────┘</div>
+
+  <div class="sub">2.2 Emergency Alert Message Flow</div>
+  <div class="flow"><div class="fb r">Admin Creates Alert</div><div class="fa">→</div><div class="fb">POST /api/alerts</div><div class="fa">→</div><div class="fb g">Save to MongoDB</div><div class="fa">→</div><div class="fb o">Publish to Kafka</div></div>
+  <div class="flow" style="margin-left:1rem"><div class="fa">↓</div></div>
+  <div class="flow"><div class="fb o">Kafka: emergency.alerts</div><div class="fa">→</div><div class="fb">WebSocket broadcastToAll()</div><div class="fa">→</div><div class="fb g">All Clients: NEW_ALERT event</div></div>
+  <div class="flow" style="margin-left:1rem"><div class="fa">↓</div></div>
+  <div class="flow"><div class="fb g">Student Dashboard Updates</div><div class="fa">+</div><div class="fb">Toast Notification</div><div class="fa">+</div><div class="fb">XML File Generated</div></div>
+
+  <div class="sub">2.3 Location Sharing Flow</div>
+  <div class="flow"><div class="fb g">User Taps Map</div><div class="fa">→</div><div class="fb">sendRaw(LOCATION_SHARE)</div><div class="fa">→</div><div class="fb">WebSocket Server</div></div>
+  <div class="flow" style="margin-left:1rem"><div class="fa">↓</div></div>
+  <div class="flow"><div class="fb o">Save to MongoDB (LocationPin)</div><div class="fa">+</div><div class="fb">broadcastToAll()</div><div class="fa">→</div><div class="fb r">Admin Map Pin Updates Live</div></div>
+
+  <div class="sub">2.4 Technology Stack</div>
+  <table>
+    <tr><th>Layer</th><th>Technology</th><th>Purpose</th></tr>
+    <tr><td>Runtime</td><td>Node.js 18+</td><td>Server-side JavaScript</td></tr>
+    <tr><td>Framework</td><td>Express.js 4</td><td>REST API and middleware</td></tr>
+    <tr><td>Database</td><td>MongoDB + Mongoose</td><td>Document storage and ODM</td></tr>
+    <tr><td>Auth</td><td>JWT + bcryptjs (12 rounds)</td><td>Stateless auth, password hashing</td></tr>
+    <tr><td>Real-time</td><td>ws (WebSocket)</td><td>Bi-directional live communication</td></tr>
+    <tr><td>Messaging</td><td>Kafka / RedPanda (kafkajs)</td><td>Message broker with offline fallback</td></tr>
+    <tr><td>XML Build</td><td>xmlbuilder2</td><td>Structured XML document creation</td></tr>
+    <tr><td>XML Parse</td><td>xml2js + sax</td><td>DOM and SAX parsing strategies</td></tr>
+    <tr><td>XSLT</td><td>Custom JS engine + .xsl file</td><td>XML to HTML/JSON transformation</td></tr>
+    <tr><td>Scheduling</td><td>node-cron</td><td>Automated background tasks</td></tr>
+    <tr><td>Security</td><td>Helmet, rate-limit, mongo-sanitize</td><td>HTTP hardening and injection prevention</td></tr>
+    <tr><td>Frontend</td><td>Vanilla JS ES Modules</td><td>SPA without framework overhead</td></tr>
+    <tr><td>CSS</td><td>Tailwind CSS + CSS Variables</td><td>Responsive, themeable UI</td></tr>
+    <tr><td>Charts</td><td>Chart.js</td><td>Analytics visualizations</td></tr>
+    <tr><td>PWA</td><td>Service Worker + Web Manifest</td><td>Offline support, installable</td></tr>
+    <tr><td>Automation</td><td>PowerShell + node-cron</td><td>Backup, cleanup, health scripts</td></tr>
+    <tr><td>Containers</td><td>Docker + docker-compose</td><td>MongoDB and Kafka containers</td></tr>
+    <tr><td>Logging</td><td>Winston</td><td>Structured application logging</td></tr>
+  </table>
+</div>
+
+</body>
+</html>
+
+<!-- SECTION 3 -->
+<div class="page" id="s3">
+  <div class="sec-title">3. Feature Descriptions</div>
+
+  <div class="sub">3.1 Messaging System</div>
+  <p>RavenSync uses a dual-layer messaging architecture combining <strong>WebSocket</strong> for real-time delivery and <strong>Kafka</strong> as a reliable message broker with offline fallback.</p>
+  <table>
+    <tr><th>Component</th><th>Technology</th><th>Role</th></tr>
+    <tr><td>Real-time delivery</td><td>WebSocket (ws)</td><td>Instant push to all connected clients</td></tr>
+    <tr><td>Message broker</td><td>Kafka / RedPanda (kafkajs)</td><td>Durable, ordered message queuing</td></tr>
+    <tr><td>Offline fallback</td><td>In-memory array queue</td><td>Stores messages when Kafka is unavailable</td></tr>
+    <tr><td>Channel messaging</td><td>WebSocket subscriptions</td><td>Per-channel message routing</td></tr>
+    <tr><td>Profanity filter</td><td>Custom word list + regex</td><td>Client and server-side censoring</td></tr>
+  </table>
+  <p><strong>Kafka Topics:</strong> emergency.alerts · notifications · broadcasts · dead.letter</p>
+  <p><strong>Offline Queue:</strong> When Kafka is unavailable, messages are stored in-memory and automatically flushed when Kafka reconnects. The system retries connection every 10 seconds.</p>
+  <table>
+    <tr><th>WebSocket Event</th><th>Direction</th><th>Description</th></tr>
+    <tr><td>NEW_ALERT</td><td>Server → Client</td><td>Emergency alert broadcast</td></tr>
+    <tr><td>ALERT_RESOLVED</td><td>Server → Client</td><td>Alert status update</td></tr>
+    <tr><td>NEW_MESSAGE</td><td>Server → Client</td><td>Channel message delivery</td></tr>
+    <tr><td>LOCATION_SHARE</td><td>Client → Server → All</td><td>User map location pin</td></tr>
+    <tr><td>SUBSCRIBE_CHANNEL</td><td>Client → Server</td><td>Join a channel room</td></tr>
+    <tr><td>CHAT_WARNING</td><td>Server → Client</td><td>Profanity warning or mute notice</td></tr>
+    <tr><td>HEARTBEAT</td><td>Server → All</td><td>Keep-alive every 30 seconds</td></tr>
+  </table>
+
+  <div class="sub">3.2 XML Usage</div>
+  <p>XML is the primary structured data format for exports, reports, and audit trails. All documents follow a custom namespace schema under <code>http://ravensync.io/</code> and are generated using <strong>xmlbuilder2</strong>.</p>
+  <table>
+    <tr><th>XML Document</th><th>Namespace</th><th>Contents</th></tr>
+    <tr><td>emergency_alerts.xml</td><td>ravensync.io/alerts</td><td>All alert records with metadata</td></tr>
+    <tr><td>users export</td><td>ravensync.io/users</td><td>User list with roles and departments</td></tr>
+    <tr><td>audit_logs.xml</td><td>ravensync.io/logs</td><td>System audit trail entries</td></tr>
+    <tr><td>analytics_report.xml</td><td>ravensync.io/report</td><td>Statistics and alert records</td></tr>
+  </table>
+  <div style="background:#0f172a;color:#a8ff78;font-family:'Courier New',monospace;font-size:0.72rem;padding:0.8rem 1rem;border-radius:8px;margin:0.6rem 0;white-space:pre;line-height:1.6;">&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;RavenSyncAlerts xmlns="http://ravensync.io/alerts" version="1.0"&gt;
+  &lt;Summary&gt;
+    &lt;TotalAlerts&gt;3&lt;/TotalAlerts&gt;
+    &lt;GeneratedAt&gt;2025-05-17T02:23:23.705Z&lt;/GeneratedAt&gt;
+    &lt;Platform&gt;RavenSync Emergency Communication Platform&lt;/Platform&gt;
+  &lt;/Summary&gt;
+  &lt;Alerts&gt;
+    &lt;Alert id="abc123" severity="critical"&gt;
+      &lt;Title&gt;Typhoon Warning — Immediate Evacuation&lt;/Title&gt;
+      &lt;Type&gt;emergency&lt;/Type&gt;
+      &lt;Status&gt;active&lt;/Status&gt;
+      &lt;AffectedArea&gt;All Campus Buildings&lt;/AffectedArea&gt;
+      &lt;CreatedAt&gt;2025-05-17T01:00:00.000Z&lt;/CreatedAt&gt;
+    &lt;/Alert&gt;
+  &lt;/Alerts&gt;
+&lt;/RavenSyncAlerts&gt;</div>
+
+  <div class="sub">3.3 Parsing Methods — DOM and SAX</div>
+  <table>
+    <tr><th>Method</th><th>Library</th><th>Approach</th><th>Best For</th></tr>
+    <tr><td>DOM Parsing</td><td>xml2js</td><td>Loads entire XML into a JS object tree</td><td>Small-medium files, random node access</td></tr>
+    <tr><td>SAX Parsing</td><td>sax</td><td>Event-driven streaming per tag/text</td><td>Large files, low memory, sequential read</td></tr>
+  </table>
+  <p><strong>DOM:</strong> Uses xml2js.Parser with explicitArray:false and mergeAttrs:true. Returns a full JS object convertible to JSON.</p>
+  <p><strong>SAX:</strong> Fires onopentag (element name, attributes, depth), onclosetag, and ontext events. Returns an event log with stats: element count, attribute count, text node count, total events.</p>
+
+  <div class="sub">3.4 XSLT Transformations</div>
+  <p>A custom XSLT engine converts XML into styled HTML reports or JSON. The stylesheet is at <code>backend/xslt/emergency_report.xsl</code>.</p>
+  <table>
+    <tr><th>Output</th><th>Method</th><th>Result</th></tr>
+    <tr><td>HTML Report</td><td>XSL stylesheet + JS engine</td><td>Dark-theme HTML table with stat cards</td></tr>
+    <tr><td>JSON</td><td>xml2js DOM parse → JSON.stringify</td><td>Machine-readable JSON object</td></tr>
+  </table>
+  <p>The XSL uses xsl:for-each to iterate records, xsl:value-of to extract fields, and xsl:attribute to assign CSS badge classes by severity. Output is a complete self-contained HTML page rendered live in an iframe in the XML Center.</p>
+
+  <div class="sub">3.5 Scripting Integration</div>
+  <p>9 PowerShell scripts are executable from the Automation Center UI via <code>POST /api/system/scripts/:id/run</code>. Output streams line-by-line to the terminal with color coding.</p>
+  <table>
+    <tr><th>Script</th><th>Category</th><th>Purpose</th></tr>
+    <tr><td>xml-backup.ps1</td><td>Backup</td><td>ZIP all XML files with timestamp</td></tr>
+    <tr><td>xml-transform.ps1</td><td>XML</td><td>XSLT transformation of XML files</td></tr>
+    <tr><td>health-check.ps1</td><td>Monitoring</td><td>Node.js, MongoDB, disk, memory diagnostics</td></tr>
+    <tr><td>log-cleanup.ps1</td><td>Maintenance</td><td>Remove log files older than 30 days</td></tr>
+    <tr><td>queue-consumer.ps1</td><td>Messaging</td><td>Start Kafka message consumer</td></tr>
+    <tr><td>report-gen.ps1</td><td>Reports</td><td>Generate analytics reports</td></tr>
+    <tr><td>db-backup.ps1</td><td>Backup</td><td>Export all MongoDB collections to ZIP</td></tr>
+    <tr><td>db-restore.ps1</td><td>Backup</td><td>Restore MongoDB from latest backup</td></tr>
+    <tr><td>notify-process.ps1</td><td>Notifications</td><td>Process and dispatch pending notifications</td></tr>
+  </table>
+  <p>node-cron runs XML backup every 6 hours and log cleanup daily at 2AM automatically in the background.</p>
+</div>
+
+<!-- SECTION 4 -->
+<div class="page" id="s4">
+  <div class="sec-title">4. Technical Explanation</div>
+
+  <div class="sub">4.1 How Each Requirement Was Implemented</div>
+
+  <p><strong>Real-Time Emergency Alerts</strong></p>
+  <p>When an admin creates an alert via POST /api/alerts, the alertController saves it to MongoDB, then calls publishAlert() from messagingService.js which sends it to the Kafka emergency.alerts topic. Simultaneously, the WebSocket service calls broadcastToAll() sending a NEW_ALERT event to every connected client. The frontend listens with on('NEW_ALERT', ...) and updates the dashboard, shows a toast notification, and triggers the student response panel.</p>
+
+  <p><strong>WebSocket Server</strong></p>
+  <p>Implemented using the ws library in websocketService.js. On connection, the server verifies the JWT token from the query string. Each connected user is stored in a Map keyed by userId. Channel subscriptions are tracked in a separate Map. The server sends a HEARTBEAT every 30 seconds to keep connections alive and detect stale clients.</p>
+
+  <p><strong>Kafka Messaging with Offline Fallback</strong></p>
+  <p>The messagingService.js connects to Kafka on startup. If Kafka is unavailable, all publish calls push to an in-memory offlineQueue array instead. A reconnect timer fires every 10 seconds. When Kafka reconnects, _flushOfflineQueue() drains the array by sending all pending messages. This ensures zero message loss even during broker downtime.</p>
+
+  <p><strong>XML Generation</strong></p>
+  <p>xmlService.js uses xmlbuilder2's fluent API to construct XML documents programmatically. Each generator function (generateAlertsXML, generateUsersXML, generateLogsXML, generateReportXML) builds a document with a namespace declaration, a Summary section, and a data section. Documents are saved to backend/xml/ and also returned via API for live preview.</p>
+
+  <p><strong>DOM Parsing Implementation</strong></p>
+  <p>The parseXML() function wraps xml2js.Parser in a Promise. It uses explicitArray:false so single-child elements are not wrapped in arrays, and mergeAttrs:true so XML attributes are merged into the object alongside child elements. The result is a clean JavaScript object that mirrors the XML structure.</p>
+
+  <p><strong>SAX Parsing Implementation</strong></p>
+  <p>The saxParseXML() function creates a sax.parser in strict mode with trim and normalize options. It tracks depth as a counter incremented on openTag and decremented on closeTag. All events are pushed to an events array. The parser returns both the full event log and a statistics summary, making it useful for XML structure analysis and validation.</p>
+
+  <p><strong>XSLT Transformation</strong></p>
+  <p>The transformXML() function checks the requested format. For JSON, it calls parseXML() and serializes the result. For HTML, it calls parseXML() then passes the object to generateHTMLReport() which detects the document type (alerts, users, logs, report) and builds a styled HTML page with a header, stat cards grid, and a data table. The XSL file provides an alternative pure-XSLT path for the emergency alerts report specifically.</p>
+
+  <p><strong>Campus Map with Offline Support</strong></p>
+  <p>The map uses the school's actual PNG image served as a static file. Zoom and pan are implemented with CSS transform: translate() scale() on a wrapper div — no map library needed. Admin pins are saved to MongoDB via POST /api/map/admin-pins and loaded on page mount. User location pins are sent via WebSocket LOCATION_SHARE and also saved to MongoDB via POST /api/map/pins so they survive admin page refreshes. The map works fully offline on LAN.</p>
+
+  <p><strong>Role-Based Access Control</strong></p>
+  <p>The protect middleware verifies the JWT Bearer token on every API request. The authorize(...roles) middleware checks req.user.role against the allowed roles array. Three roles exist: superadmin (full access), admin (instructor-level), and user (student). The frontend also checks roles before rendering admin-only UI elements using the isAdmin() helper from auth.js.</p>
+
+  <p><strong>PWA and Offline Caching</strong></p>
+  <p>sw.js registers a Service Worker that caches static assets (HTML, CSS, JS, images, fonts) on install. On fetch, it uses a cache-first strategy for static files and network-first for API calls. The web manifest enables Add to Home Screen on mobile and desktop. The app is fully installable and shows cached content when offline.</p>
+
+  <p><strong>Security Implementation</strong></p>
+  <ul>
+    <li>Helmet sets 11 HTTP security headers including X-Frame-Options, X-Content-Type-Options, and Referrer-Policy</li>
+    <li>express-rate-limit restricts API to 100 requests per 15 minutes per IP in production</li>
+    <li>express-mongo-sanitize strips $ and . from request bodies to prevent NoSQL injection</li>
+    <li>bcryptjs hashes passwords with 12 salt rounds — computationally expensive to brute-force</li>
+    <li>JWT tokens expire after 7 days. Invalid or expired tokens trigger auto-logout on the frontend</li>
+    <li>All admin actions are logged to the AuditLog collection with user, action, resource, and IP address</li>
+  </ul>
+
+  <div class="sub">4.2 Challenges Encountered and Solutions</div>
+
+  <table>
+    <tr><th>Challenge</th><th>Solution</th></tr>
+    <tr>
+      <td>Kafka container keeps stopping in Docker</td>
+      <td>Added restart:always policy, changed ADVERTISED_LISTENERS from localhost to host.docker.internal (Windows Docker), capped heap with KAFKA_HEAP_OPTS: -Xmx512m -Xms256m to prevent OOM kills</td>
+    </tr>
+    <tr>
+      <td>Map pins lost on admin page refresh</td>
+      <td>Admin pins moved from localStorage to MongoDB (AdminPin model). User location pins also persisted to MongoDB (LocationPin model) via both WebSocket handler and REST API call simultaneously</td>
+    </tr>
+    <tr>
+      <td>Channels page unusable on mobile — side-by-side layout too narrow</td>
+      <td>Implemented mobile-first panel switching: channel list is full-screen on mobile, tapping a channel hides the list and shows full-screen chat. Back arrow returns to list. Desktop layout unchanged</td>
+    </tr>
+    <tr>
+      <td>Message action buttons (reply/edit/delete) not accessible on mobile — hover-only</td>
+      <td>Added visible pill buttons below each message on mobile (sm:hidden), kept hover overlay on desktop (hidden sm:flex)</td>
+    </tr>
+    <tr>
+      <td>Sidebar overflows on short screens with 10 nav items</td>
+      <td>Changed sidebar to height:100vh with overflow:hidden. Nav section gets flex:1 and overflow-y:auto so it scrolls independently while header and footer stay pinned</td>
+    </tr>
+    <tr>
+      <td>Dark mode text invisible on landing page</td>
+      <td>Replaced all var(--text-secondary) with var(--text-primary) + opacity:0.75 so text is always readable on both themes. Secondary color was too dark on dark backgrounds</td>
+    </tr>
+    <tr>
+      <td>Kafka ADVERTISED_LISTENERS misconfigured</td>
+      <td>Changed from PLAINTEXT://localhost:9092 to PLAINTEXT://host.docker.internal:9092 so Node.js running outside Docker can reach the broker correctly on Windows</td>
+    </tr>
+    <tr>
+      <td>User management table unreadable on mobile</td>
+      <td>Added a parallel mobile card list (sm:hidden) that renders each user as a compact card. Desktop table hidden on mobile (hidden sm:block). Both populated from the same loadUsers() function</td>
+    </tr>
+  </table>
+</div>
+
+<!-- SECTION 5 -->
+<div class="page" id="s5">
+  <div class="sec-title">5. Screenshots / Outputs</div>
+
+  <div class="sub">5.1 System Interface — Page Descriptions</div>
+  <table>
+    <tr><th>Page</th><th>URL</th><th>Access</th><th>Description</th></tr>
+    <tr><td>Landing Page</td><td>/</td><td>Public</td><td>Marketing page with features, stats, team, FAQ, dark/light toggle</td></tr>
+    <tr><td>Login</td><td>/login</td><td>Public</td><td>Username + password login with JWT token storage</td></tr>
+    <tr><td>Register</td><td>/register</td><td>Public</td><td>New user registration form</td></tr>
+    <tr><td>Admin Dashboard</td><td>/dashboard</td><td>Admin+</td><td>Live alert feed, student response status, system health, charts</td></tr>
+    <tr><td>Student Dashboard</td><td>/dashboard</td><td>User</td><td>Active alert banner, Safe/Help/Damage response buttons</td></tr>
+    <tr><td>Emergency Alerts</td><td>/alerts</td><td>All</td><td>Alert list with filters, create alert modal (admin), resolve/delete</td></tr>
+    <tr><td>Channels</td><td>/channels</td><td>All</td><td>Real-time chat, reply, edit, delete, profanity filter, mute system</td></tr>
+    <tr><td>Announcements</td><td>/announcements</td><td>All</td><td>Broadcast announcements with read tracking</td></tr>
+    <tr><td>Campus Map</td><td>/map</td><td>All</td><td>DORSU map image with zoom/pan, admin pins, live user locations</td></tr>
+    <tr><td>Message Queue</td><td>/messaging</td><td>Admin+</td><td>Kafka broker status, queue stats, throughput chart, live feed</td></tr>
+    <tr><td>XML Center</td><td>/xml</td><td>Admin+</td><td>Export XML, DOM/SAX parse, XSLT transform, file browser</td></tr>
+    <tr><td>Automation</td><td>/automation</td><td>Admin+</td><td>Run PowerShell scripts, terminal output, system health, DB backups</td></tr>
+    <tr><td>Analytics</td><td>/analytics</td><td>Admin+</td><td>Charts, trends, XML report generation</td></tr>
+    <tr><td>User Management</td><td>/users</td><td>Admin+</td><td>User list, activate/deactivate, create user, word filter manager</td></tr>
+    <tr><td>Settings</td><td>/settings</td><td>All</td><td>Profile update, avatar upload, password change</td></tr>
+  </table>
+
+  <div class="sub">5.2 XML File Samples</div>
+
+  <p><strong>emergency_alerts.xml</strong> — located at backend/xml/emergency_alerts.xml</p>
+  <div style="background:#0f172a;color:#a8ff78;font-family:'Courier New',monospace;font-size:0.72rem;padding:0.8rem 1rem;border-radius:8px;margin:0.6rem 0;white-space:pre;line-height:1.6;">&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;RavenSyncAlerts xmlns="http://ravensync.io/alerts" version="1.0"
+  generatedAt="2026-05-17T02:23:23.705Z"&gt;
+  &lt;Summary&gt;
+    &lt;TotalAlerts&gt;0&lt;/TotalAlerts&gt;
+    &lt;GeneratedAt&gt;2026-05-17T02:23:23.709Z&lt;/GeneratedAt&gt;
+    &lt;Platform&gt;RavenSync Emergency Communication Platform&lt;/Platform&gt;
+  &lt;/Summary&gt;
+  &lt;Alerts/&gt;
+&lt;/RavenSyncAlerts&gt;</div>
+
+  <p><strong>analytics_report.xml</strong> — located at backend/xml/analytics_report.xml</p>
+  <div style="background:#0f172a;color:#a8ff78;font-family:'Courier New',monospace;font-size:0.72rem;padding:0.8rem 1rem;border-radius:8px;margin:0.6rem 0;white-space:pre;line-height:1.6;">&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;RavenSyncReport xmlns="http://ravensync.io/report" version="1.0"&gt;
+  &lt;ReportMetadata&gt;
+    &lt;ReportID&gt;RPT-1747448603705&lt;/ReportID&gt;
+    &lt;GeneratedAt&gt;2025-05-17T02:23:23.705Z&lt;/GeneratedAt&gt;
+    &lt;GeneratedBy&gt;RavenSync Analytics Engine&lt;/GeneratedBy&gt;
+    &lt;Filters&gt;
+      &lt;StartDate&gt;N/A&lt;/StartDate&gt;
+      &lt;EndDate&gt;N/A&lt;/EndDate&gt;
+      &lt;Type&gt;all&lt;/Type&gt;
+    &lt;/Filters&gt;
+  &lt;/ReportMetadata&gt;
+  &lt;Statistics&gt;
+    &lt;TotalAlerts&gt;12&lt;/TotalAlerts&gt;
+    &lt;CriticalAlerts&gt;3&lt;/CriticalAlerts&gt;
+    &lt;ResolvedAlerts&gt;8&lt;/ResolvedAlerts&gt;
+    &lt;ActiveAlerts&gt;4&lt;/ActiveAlerts&gt;
+  &lt;/Statistics&gt;
+  &lt;AlertRecords&gt;
+    &lt;Record&gt;
+      &lt;ID&gt;abc123&lt;/ID&gt;
+      &lt;Title&gt;Typhoon Warning&lt;/Title&gt;
+      &lt;Type&gt;emergency&lt;/Type&gt;
+      &lt;Severity&gt;critical&lt;/Severity&gt;
+      &lt;Status&gt;active&lt;/Status&gt;
+      &lt;CreatedAt&gt;2025-05-17T01:00:00.000Z&lt;/CreatedAt&gt;
+    &lt;/Record&gt;
+  &lt;/AlertRecords&gt;
+&lt;/RavenSyncReport&gt;</div>
+
+  <div class="sub">5.3 API Endpoints Reference</div>
+  <table>
+    <tr><th>Method</th><th>Endpoint</th><th>Access</th><th>Description</th></tr>
+    <tr><td>POST</td><td>/api/auth/login</td><td>Public</td><td>Login with username + password, returns JWT</td></tr>
+    <tr><td>POST</td><td>/api/auth/register</td><td>Public</td><td>Register new user account</td></tr>
+    <tr><td>GET</td><td>/api/auth/me</td><td>Auth</td><td>Get current authenticated user</td></tr>
+    <tr><td>GET</td><td>/api/alerts</td><td>Auth</td><td>List alerts with search, status, severity filters</td></tr>
+    <tr><td>POST</td><td>/api/alerts</td><td>Admin+</td><td>Create and broadcast emergency alert</td></tr>
+    <tr><td>PATCH</td><td>/api/alerts/:id/resolve</td><td>Admin+</td><td>Mark alert as resolved</td></tr>
+    <tr><td>GET</td><td>/api/alerts/stats</td><td>Auth</td><td>Alert count statistics</td></tr>
+    <tr><td>GET</td><td>/api/channels</td><td>Auth</td><td>List all channels</td></tr>
+    <tr><td>POST</td><td>/api/channels</td><td>Auth</td><td>Create new channel</td></tr>
+    <tr><td>GET</td><td>/api/channels/:id/messages</td><td>Auth</td><td>Get channel message history</td></tr>
+    <tr><td>POST</td><td>/api/channels/:id/messages</td><td>Auth</td><td>Send message to channel</td></tr>
+    <tr><td>GET</td><td>/api/map/admin-pins</td><td>Auth</td><td>Get all admin map pins</td></tr>
+    <tr><td>POST</td><td>/api/map/admin-pins</td><td>Admin+</td><td>Place admin pin on map</td></tr>
+    <tr><td>DELETE</td><td>/api/map/admin-pins/:id</td><td>Admin+</td><td>Remove specific admin pin</td></tr>
+    <tr><td>GET</td><td>/api/map/pins</td><td>Admin+</td><td>Get all user location pins</td></tr>
+    <tr><td>POST</td><td>/api/map/pins</td><td>Auth</td><td>Save or update user location pin</td></tr>
+    <tr><td>GET</td><td>/api/xml/alerts</td><td>Auth</td><td>Export alerts as XML</td></tr>
+    <tr><td>GET</td><td>/api/xml/users</td><td>Admin+</td><td>Export users as XML</td></tr>
+    <tr><td>GET</td><td>/api/xml/logs</td><td>Admin+</td><td>Export audit logs as XML</td></tr>
+    <tr><td>POST</td><td>/api/xml/parse</td><td>Admin+</td><td>DOM parse XML content</td></tr>
+    <tr><td>POST</td><td>/api/xml/parse/sax</td><td>Admin+</td><td>SAX parse XML content</td></tr>
+    <tr><td>POST</td><td>/api/xml/transform</td><td>Admin+</td><td>XSLT transform to HTML or JSON</td></tr>
+    <tr><td>GET</td><td>/api/system/queue-stats</td><td>Admin+</td><td>Kafka queue statistics</td></tr>
+    <tr><td>GET</td><td>/api/system/system-health</td><td>Admin+</td><td>Database, WebSocket, memory, uptime</td></tr>
+    <tr><td>POST</td><td>/api/system/scripts/:id/run</td><td>Admin+</td><td>Execute PowerShell script</td></tr>
+    <tr><td>GET</td><td>/api/system/backups</td><td>Admin+</td><td>List database backup files</td></tr>
+    <tr><td>GET</td><td>/api/admin/dashboard</td><td>Admin+</td><td>Dashboard statistics</td></tr>
+    <tr><td>GET</td><td>/api/admin/users</td><td>Admin+</td><td>User management list</td></tr>
+    <tr><td>GET</td><td>/api/admin/audit-logs</td><td>Admin+</td><td>Full audit trail</td></tr>
+    <tr><td>GET</td><td>/api/announcements</td><td>Auth</td><td>List announcements</td></tr>
+    <tr><td>POST</td><td>/api/announcements</td><td>Admin+</td><td>Create announcement</td></tr>
+  </table>
+
+  <div class="sub">5.4 Folder Structure</div>
+  <div style="background:#0f172a;color:#94a3b8;font-family:'Courier New',monospace;font-size:0.72rem;padding:0.8rem 1rem;border-radius:8px;margin:0.6rem 0;white-space:pre;line-height:1.7;">RavenSync/
+├── backend/
+│   ├── controllers/     MVC Controllers (alert, auth, admin, xml, channel...)
+│   ├── models/          MongoDB Models (User, Alert, Channel, Message, LocationPin...)
+│   ├── routes/          Express Routes (auth, alerts, channels, xml, map, system...)
+│   ├── middlewares/     Auth (JWT protect/authorize), Error Handler, Audit Logger
+│   ├── services/        WebSocket, Kafka Messaging, XML Engine
+│   ├── config/          Database connection, Winston logger
+│   ├── xml/             Generated XML files (emergency_alerts.xml, analytics_report.xml)
+│   ├── xslt/            XSLT Stylesheet (emergency_report.xsl)
+│   ├── scripts/         PowerShell automation scripts (9 scripts)
+│   ├── backups/db/      MongoDB backup ZIP archives
+│   ├── logs/            Application logs (combined.log, error.log)
+│   └── server.js        Application entry point
+└── frontend/
+    └── public/
+        ├── css/         main.css (CSS variables, light/dark theme, responsive)
+        ├── images/      logo.png, dorsu-map.png
+        ├── js/
+        │   ├── pages/   SPA page components (15 pages)
+        │   ├── services/ API client, WebSocket, Auth, Theme, Notifications
+        │   ├── components/ Sidebar, NotificationBell
+        │   └── utils/   Helpers, Toast
+        ├── vendor/      Tailwind, Chart.js, FontAwesome (offline)
+        ├── index.html   SPA entry point
+        ├── manifest.json PWA manifest
+        └── sw.js        Service Worker</div>
+
+  <div style="margin-top:3rem; text-align:center; color:#64748b; font-size:0.8rem; border-top:1px solid #e2e8f0; padding-top:1.5rem;">
+    <p>🦅 RavenSync — Enterprise Emergency Communication Platform</p>
+    <p>System Documentation v1.0 · DORSU · 2025 · Confidential</p>
+    <p>Built with Node.js · MongoDB · Kafka · WebSocket · Vanilla JS</p>
+  </div>
+</div>
+
+</body>
+</html>

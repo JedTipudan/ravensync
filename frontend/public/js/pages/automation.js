@@ -6,50 +6,46 @@ export function renderAutomation(app) {
   app.innerHTML = `
     ${renderSidebar('/automation')}
     <div class="main-content">
-      <header class="sticky top-0 z-40 glass border-b border-white/5 px-6 py-4 flex items-center justify-between">
-        <div class="flex items-center gap-3">
-          <button onclick="toggleSidebar()" class="mobile-menu-btn btn btn-ghost p-2 mr-1">
+      <header class="sticky top-0 z-40 glass border-b border-white/5 px-4 py-3 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <button onclick="toggleSidebar()" class="mobile-menu-btn btn btn-ghost p-2">
             <i class="fa-solid fa-bars"></i>
           </button>
           <div>
-            <h1 class="text-lg font-bold">Automation Center</h1>
-            <p class="text-xs text-slate-500">PowerShell scripts, cron jobs, and system automation</p>
+            <h1 class="text-base font-bold">Automation</h1>
+            <p class="text-xs text-slate-500 hidden sm:block">Scripts &amp; system automation</p>
           </div>
         </div>
-        <div class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs">
+        <div class="flex items-center gap-1.5 px-2 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs">
           <div class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></div>
-          Automation Engine Active
+          <span class="hidden sm:inline">Automation Engine</span> Active
         </div>
       </header>
 
-      <main class="p-6 space-y-6">
+      <main class="p-3 sm:p-6 space-y-4 sm:space-y-6">
         <!-- Cron status -->
-        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4">
           ${[
             { name: 'XML Backup', schedule: 'Every 6h', status: 'active', last: '2h ago', icon: '💾' },
             { name: 'Log Cleanup', schedule: 'Daily 2AM', status: 'active', last: '22h ago', icon: '🧹' },
             { name: 'Health Check', schedule: 'Every 5m', status: 'active', last: '3m ago', icon: '❤️' },
             { name: 'Report Gen', schedule: 'Daily 8AM', status: 'active', last: '4h ago', icon: '📊' },
           ].map(job => `
-            <div class="stat-card card-hover" style="--accent-color:#10b981">
-              <div class="flex items-start justify-between mb-2">
-                <span class="text-2xl">${job.icon}</span>
-                <div class="flex items-center gap-1">
-                  <div class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></div>
-                  <span class="text-xs text-emerald-400">${job.status}</span>
-                </div>
+            <div class="stat-card card-hover p-3" style="--accent-color:#10b981">
+              <div class="flex items-start justify-between mb-1">
+                <span class="text-xl">${job.icon}</span>
+                <div class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse mt-1"></div>
               </div>
-              <div class="font-semibold text-sm">${job.name}</div>
-              <div class="text-xs text-slate-500 mt-1">${job.schedule}</div>
-              <div class="text-xs text-slate-600 mt-0.5">Last: ${job.last}</div>
+              <div class="font-semibold text-xs sm:text-sm">${job.name}</div>
+              <div class="text-xs text-slate-500">${job.schedule}</div>
             </div>
           `).join('')}
         </div>
 
-        <!-- Scripts grid -->
-        <div class="grid lg:grid-cols-2 gap-6">
-          <div class="glass rounded-2xl border border-white/8 p-5">
-            <h2 class="font-bold mb-4 flex items-center gap-2">
+        <!-- Scripts + Terminal: stack on mobile -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+          <div class="glass rounded-2xl border border-white/8 p-4">
+            <h2 class="font-bold mb-3 flex items-center gap-2 text-sm sm:text-base">
               <i class="fa-solid fa-terminal text-indigo-400"></i>
               Available Scripts
             </h2>
@@ -58,19 +54,18 @@ export function renderAutomation(app) {
             </div>
           </div>
 
-          <!-- Terminal output -->
-          <div class="glass rounded-2xl border border-white/8 p-5">
-            <div class="flex items-center justify-between mb-4">
-              <h2 class="font-bold flex items-center gap-2">
+          <div class="glass rounded-2xl border border-white/8 p-4">
+            <div class="flex items-center justify-between mb-3">
+              <h2 class="font-bold flex items-center gap-2 text-sm sm:text-base">
                 <i class="fa-solid fa-display text-green-400"></i>
-                Terminal Output
+                Terminal
               </h2>
               <div class="flex gap-2">
                 <div id="exec-status" class="hidden items-center gap-1.5 text-xs">
                   <div class="spinner" style="width:14px;height:14px;border-width:2px"></div>
-                  <span class="text-slate-400">Executing...</span>
+                  <span class="text-slate-400">Running...</span>
                 </div>
-                <button onclick="clearTerminal()" class="btn btn-ghost text-xs py-1.5">Clear</button>
+                <button onclick="clearTerminal()" class="btn btn-ghost text-xs py-1">Clear</button>
               </div>
             </div>
             <div class="terminal">
@@ -78,20 +73,17 @@ export function renderAutomation(app) {
                 <div class="terminal-dot bg-red-500"></div>
                 <div class="terminal-dot bg-yellow-500"></div>
                 <div class="terminal-dot bg-green-500"></div>
-                <span class="text-xs text-slate-400 ml-2" id="terminal-title">RavenSync PowerShell Terminal</span>
+                <span class="text-xs text-slate-400 ml-2 truncate" id="terminal-title">PowerShell Terminal</span>
               </div>
               <div class="terminal-body" id="terminal-output">
-                <div class="terminal-line info">RavenSync Automation Center v1.0</div>
-                <div class="terminal-line info">PowerShell Script Engine Ready</div>
-                <div class="terminal-line">Select a script and click Run to execute...</div>
-                <div class="terminal-line" style="color:#6366f1">PS C:\RavenSync\backend\scripts> _</div>
+                <div class="terminal-line info">RavenSync Automation v1.0</div>
+                <div class="terminal-line">Select a script and click Run...</div>
+                <div class="terminal-line" style="color:#6366f1">PS> _</div>
               </div>
             </div>
-
-            <!-- Execution history -->
-            <div class="mt-4">
-              <h3 class="text-sm font-medium text-slate-400 mb-2">Execution History</h3>
-              <div id="exec-history" class="space-y-1.5 max-h-40 overflow-y-auto">
+            <div class="mt-3">
+              <h3 class="text-xs font-medium text-slate-400 mb-2">Execution History</h3>
+              <div id="exec-history" class="space-y-1 max-h-32 overflow-y-auto">
                 <div class="text-xs text-slate-600">No executions yet</div>
               </div>
             </div>
@@ -99,28 +91,28 @@ export function renderAutomation(app) {
         </div>
 
         <!-- System monitoring -->
-        <div class="glass rounded-2xl border border-white/8 p-5">
-          <div class="flex items-center justify-between mb-4">
-            <h2 class="font-bold">📈 System Monitoring</h2>
-            <button onclick="refreshSystemHealth()" class="btn btn-ghost text-sm">
+        <div class="glass rounded-2xl border border-white/8 p-4">
+          <div class="flex items-center justify-between mb-3">
+            <h2 class="font-bold text-sm sm:text-base">📈 System Monitoring</h2>
+            <button onclick="refreshSystemHealth()" class="btn btn-ghost text-xs py-1">
               <i class="fa-solid fa-rotate"></i> Refresh
             </button>
           </div>
-          <div id="system-health" class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <div id="system-health" class="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4">
             <div class="text-center py-4"><div class="spinner mx-auto"></div></div>
           </div>
         </div>
 
         <!-- Backups -->
-        <div class="glass rounded-2xl border border-white/8 p-5">
-          <div class="flex items-center justify-between mb-4">
-            <h2 class="font-bold">🗄️ Database Backups</h2>
+        <div class="glass rounded-2xl border border-white/8 p-4">
+          <div class="flex items-center justify-between mb-3">
+            <h2 class="font-bold text-sm sm:text-base">🗄️ Database Backups</h2>
             <div class="flex gap-2">
-              <button onclick="loadBackups()" class="btn btn-ghost text-sm">
-                <i class="fa-solid fa-rotate"></i> Refresh
+              <button onclick="loadBackups()" class="btn btn-ghost text-xs py-1">
+                <i class="fa-solid fa-rotate"></i>
               </button>
-              <button onclick="runScript('db-backup', 'Database Backup')" class="btn btn-primary text-sm">
-                <i class="fa-solid fa-database"></i> Backup Now
+              <button onclick="runScript('db-backup', 'Database Backup')" class="btn btn-primary text-xs py-1 px-2">
+                <i class="fa-solid fa-database"></i> <span class="hidden sm:inline">Backup Now</span><span class="sm:hidden">Backup</span>
               </button>
             </div>
           </div>
@@ -161,18 +153,17 @@ async function loadScripts() {
     };
 
     list.innerHTML = res.data.map(script => `
-      <div class="flex items-center gap-3 p-3 rounded-xl border border-white/5 hover:border-white/10 hover:bg-white/3 transition-all group">
-        <div class="w-10 h-10 rounded-lg bg-white/5 flex items-center justify-center text-lg flex-shrink-0">
+      <div class="flex items-center gap-2 p-2 sm:p-3 rounded-xl border border-white/5 hover:border-white/10 hover:bg-white/3 transition-all">
+        <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-white/5 flex items-center justify-center text-base flex-shrink-0">
           ${getCategoryIcon(script.category)}
         </div>
         <div class="flex-1 min-w-0">
-          <div class="text-sm font-medium">${script.name}</div>
-          <div class="text-xs text-slate-500 truncate">${script.description}</div>
-          <div class="text-xs ${categoryColors[script.category] || 'text-slate-400'} mt-0.5">${script.category}</div>
+          <div class="text-xs sm:text-sm font-medium truncate">${script.name}</div>
+          <div class="text-xs text-slate-500 truncate hidden sm:block">${script.description}</div>
         </div>
         <button onclick="runScript('${script.id}', '${script.name}')"
-          class="btn btn-primary text-xs py-1.5 px-3 flex-shrink-0">
-          <i class="fa-solid fa-play"></i> Run
+          class="btn btn-primary text-xs py-1 px-2 sm:px-3 flex-shrink-0">
+          <i class="fa-solid fa-play"></i> <span class="hidden sm:inline">Run</span>
         </button>
       </div>
     `).join('');

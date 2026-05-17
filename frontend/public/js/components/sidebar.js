@@ -63,18 +63,18 @@ export function renderSidebar(activePage) {
         </div>
       </div>
 
-      <nav class="flex-1 p-3 space-y-1 overflow-y-auto">
+      <nav class="flex-1 p-2 space-y-0.5 overflow-y-auto">
         ${navItems.map(item => `
           <a href="${item.path}" onclick="event.preventDefault(); navigate('${item.path}')"
              class="nav-item ${activePage === item.path ? 'active' : ''}">
-            <i class="fa-solid ${item.icon} w-4 text-center"></i>
-            <span>${item.label}</span>
+            <i class="fa-solid ${item.icon} w-4 text-center flex-shrink-0"></i>
+            <span class="truncate">${item.label}</span>
           </a>
         `).join('')}
       </nav>
 
-      <div class="p-3 border-t border-white/5">
-        <div class="flex items-center gap-3 px-2 py-2 rounded-xl hover:bg-white/5 cursor-pointer transition-colors mb-2" onclick="navigate('/settings')">
+      <div class="p-3 border-t border-white/5 flex-shrink-0">
+        <div class="flex items-center gap-3 px-2 py-2 rounded-xl hover:bg-white/5 cursor-pointer transition-colors mb-1" onclick="navigate('/settings')">
           <div class="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-xs font-bold overflow-hidden flex-shrink-0">
             ${user?.avatar ? `<img src="${user.avatar}" class="w-full h-full object-cover"/>` : (user?.name?.charAt(0)?.toUpperCase() || 'U')}
           </div>
@@ -85,11 +85,11 @@ export function renderSidebar(activePage) {
           <i class="fa-solid fa-gear text-slate-500 text-xs"></i>
         </div>
         <button onclick="logoutUser()" class="nav-item w-full text-red-400 hover:bg-red-500/10 hover:text-red-300">
-          <i class="fa-solid fa-right-from-bracket w-4 text-center"></i>
+          <i class="fa-solid fa-right-from-bracket w-4 text-center flex-shrink-0"></i>
           <span>Sign Out</span>
         </button>
-        <button onclick="toggleAppTheme()" class="nav-item w-full mt-1" id="theme-toggle-btn">
-          <i class="fa-solid ${getTheme() === 'dark' ? 'fa-sun text-yellow-400' : 'fa-moon text-indigo-400'} w-4 text-center"></i>
+        <button onclick="toggleAppTheme()" class="btn btn-ghost w-full mt-1 justify-start" id="theme-toggle-btn">
+          <i class="fa-solid ${getTheme() === 'dark' ? 'fa-sun text-yellow-400' : 'fa-moon text-indigo-500'}"></i>
           <span>${getTheme() === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>
         </button>
       </div>
@@ -108,7 +108,7 @@ export function initSidebar() {
     const next = toggleTheme();
     const btn = document.getElementById('theme-toggle-btn');
     if (btn) {
-      btn.innerHTML = `<i class="fa-solid ${next === 'dark' ? 'fa-sun text-yellow-400' : 'fa-moon text-indigo-400'} w-4 text-center"></i><span>${next === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>`;
+      btn.innerHTML = `<i class="fa-solid ${next === 'dark' ? 'fa-sun text-yellow-400' : 'fa-moon text-indigo-500'}"></i><span>${next === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>`;
     }
   };
 }
