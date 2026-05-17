@@ -50,6 +50,7 @@ function requireAuth(fn, roles = null) {
 }
 
 export function navigate(path) {
+  document.dispatchEvent(new Event('spa:navigate'));
   window.history.pushState({}, '', path);
   render(path);
 }

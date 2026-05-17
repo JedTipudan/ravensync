@@ -379,15 +379,16 @@ function initMap(isAdmin, user) {
   };
 
   // All users: receive live admin pin updates
-  on('ADMIN_PINS_UPDATE', (msg) => {
+  const offAdminPins = on('ADMIN_PINS_UPDATE', (msg) => {
     pins = (msg.data || []).map(p => ({ _id: p._id, type: p.type, x: p.x, y: p.y, label: p.label }));
     renderPins();
     if (!isAdmin) showToast('🗺️ Map updated by admin', 'info');
   });
 
   // Admin: receive live location updates
+  let offLocationShare;
   if (isAdmin) {
-    on('LOCATION_SHARE', (msg) => {
+    offLocationShare = on('LOCATION_SHARE', (msg) => {
       const d = msg.data;
       const existing = userPins.findIndex(p => p.userId === d.userId);
       if (existing !== -1) userPins.splice(existing, 1);
@@ -397,6 +398,14 @@ function initMap(isAdmin, user) {
       showToast(`📍 ${d.name} shared their location`, 'success');
     });
   }
+
+  // Cleanup listeners when SPA navigates away
+  const cleanup = () => {
+    offAdminPins?.();
+    offLocationShare?.();
+    document.removeEventListener('spa:navigate', cleanup);
+  };
+  document.addEventListener('spa:navigate', cleanup);
 
   renderPins();
   applyTransform();
