@@ -924,8 +924,9 @@ tbody tr:hover td { background: rgba(255,255,255,0.02); }
     padding: 0.375rem 0.25rem;
   }
 
-  /* Analytics: 3-button group */
-  header.sticky .flex.gap-2 { gap: 0.375rem; }
+  /* Analytics: 3-button group — tighten gap in header only */
+  header.sticky > div > .flex.gap-2,
+  header.sticky > .flex.gap-2 { gap: 0.375rem; }
 }
 
 /* iPhone SE specific (375px) */
