@@ -55,12 +55,6 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 // Logging
 app.use(morgan('combined', { stream: { write: (msg) => logger.info(msg.trim()) } }));
 
-// Static files — must be before API routes and catch-all
-const frontendPath = path.resolve(__dirname, '..', 'frontend', 'public');
-logger.info(`📁 Serving static files from: ${frontendPath}`);
-app.use(express.static(frontendPath, { index: 'index.html' }));
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-
 // API Routes
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/alerts', require('./routes/alerts'));
@@ -78,11 +72,15 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'operational', platform: 'RavenSync', version: '1.0.0', timestamp: new Date() });
 });
 
-// Serve frontend SPA — only for non-API, non-file routes
-app.get('*', (req, res, next) => {
-  if (req.path.startsWith('/api')) return next();
-  // If request has a file extension, let it 404 naturally
-  if (path.extname(req.path)) return next();
+// Static files
+const frontendPath = path.resolve(__dirname, '..', 'frontend', 'public');
+logger.info(`📁 Serving static files from: ${frontendPath}`);
+app.use(express.static(frontendPath));
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+// SPA fallback — serve index.html for all non-API, non-file routes
+app.get('*', (req, res) => {
+  if (req.path.startsWith('/api')) return res.status(404).json({ success: false, message: 'Not found' });
   res.sendFile(path.join(frontendPath, 'index.html'));
 });
 
