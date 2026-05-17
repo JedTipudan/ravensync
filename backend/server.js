@@ -78,11 +78,12 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'operational', platform: 'RavenSync', version: '1.0.0', timestamp: new Date() });
 });
 
-// Serve frontend for all non-API routes
-app.get('*', (req, res) => {
-  if (!req.path.startsWith('/api')) {
-    res.sendFile(path.join(frontendPath, 'index.html'));
-  }
+// Serve frontend SPA — only for non-API, non-file routes
+app.get('*', (req, res, next) => {
+  if (req.path.startsWith('/api')) return next();
+  // If request has a file extension, let it 404 naturally
+  if (path.extname(req.path)) return next();
+  res.sendFile(path.join(frontendPath, 'index.html'));
 });
 
 // Error handler
