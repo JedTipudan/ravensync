@@ -38,9 +38,11 @@ app.use(mongoSanitize());
 app.use(compression());
 
 // Rate limiting — relaxed in development for demo/testing
+const limitWindow = parseInt(process.env.RATE_LIMIT_WINDOW) || 15;
+const limitMax = parseInt(process.env.RATE_LIMIT_MAX) || 100;
 const limiter = rateLimit({
-  windowMs: parseInt(process.env.RATE_LIMIT_WINDOW) * 60 * 1000,
-  max: process.env.NODE_ENV === 'development' ? 2000 : parseInt(process.env.RATE_LIMIT_MAX),
+  windowMs: limitWindow * 60 * 1000,
+  max: process.env.NODE_ENV === 'development' ? 2000 : limitMax,
   message: { success: false, message: 'Too many requests, please try again later' },
   skip: (req) => process.env.NODE_ENV === 'development',
 });
@@ -53,7 +55,7 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 // Logging
 app.use(morgan('combined', { stream: { write: (msg) => logger.info(msg.trim()) } }));
 
-// Static files
+// Static files — must be before API routes and catch-all
 const frontendPath = path.resolve(__dirname, '..', 'frontend', 'public');
 logger.info(`📁 Serving static files from: ${frontendPath}`);
 app.use(express.static(frontendPath, { index: 'index.html' }));
