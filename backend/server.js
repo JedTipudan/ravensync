@@ -92,9 +92,11 @@ app.use(express.static(frontendPath, {
 }));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// SPA fallback — serve index.html for all non-API, non-file routes
+// SPA fallback — only for navigation, never for file requests
 app.get('*', (req, res) => {
   if (req.path.startsWith('/api')) return res.status(404).json({ success: false, message: 'Not found' });
+  // If path has a file extension, return 404 — don't serve index.html for missing files
+  if (path.extname(req.path) !== '') return res.status(404).send('Not found');
   res.sendFile(path.join(frontendPath, 'index.html'));
 });
 
