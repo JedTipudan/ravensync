@@ -24,12 +24,12 @@ const seed = async () => {
     });
 
     const admin = await User.create({
-      name: 'Prof. Juan dela Cruz',
+      name: 'Administrator',
       username: 'admin',
-      password: 'admin123',
-      role: 'admin',
+      password: 'admin',
+      role: 'superadmin',
       organization: 'RavenSync School',
-      department: 'DRRM Office',
+      department: 'Administration',
       isActive: true,
       isVerified: true,
     });
