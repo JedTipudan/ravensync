@@ -2,33 +2,50 @@ import { register } from '../services/auth.js';
 import { showToast } from '../utils/toast.js';
 
 const COURSES = [
+  // College of Engineering and Technology
   'BS Information Technology',
-  'BS Computer Science',
   'BS Computer Engineering',
-  'BS Information Systems',
-  'BS Nursing',
-  'BS Midwifery',
-  'BS Medical Technology',
-  'BS Pharmacy',
-  'BS Education',
-  'BS Elementary Education',
-  'BS Secondary Education',
-  'BS Business Administration',
-  'BS Accountancy',
-  'BS Hospitality Management',
-  'BS Tourism Management',
-  'BS Engineering',
+  'BS Electronics Engineering',
   'BS Civil Engineering',
   'BS Electrical Engineering',
   'BS Mechanical Engineering',
-  'BS Architecture',
-  'BS Psychology',
-  'BS Social Work',
-  'BS Criminology',
-  'AB Communication',
+  // College of Arts and Sciences
+  'BS Biology',
+  'BS Mathematics',
+  'AB English Language Studies',
   'AB Political Science',
-  'AB English',
+  // College of Business and Management
+  'BS Business Administration',
+  'BS Accountancy',
+  'BS Office Administration',
+  // College of Education
+  'Bachelor of Elementary Education',
+  'Bachelor of Secondary Education',
+  'Bachelor of Technical-Vocational Teacher Education',
+  // College of Nursing and Health Sciences
+  'BS Nursing',
+  'BS Midwifery',
+  // College of Agriculture
+  'BS Agriculture',
+  'BS Fisheries',
+  // College of Criminology
+  'BS Criminology',
+  // Graduate School
+  'Master of Arts in Education',
+  'Master in Business Administration',
+  'Master of Science in Information Technology',
   'Other',
+];
+
+const DEPARTMENTS = [
+  'College of Engineering and Technology',
+  'College of Arts and Sciences',
+  'College of Business and Management',
+  'College of Education',
+  'College of Nursing and Health Sciences',
+  'College of Agriculture',
+  'College of Criminology',
+  'Graduate School',
 ];
 
 const YEAR_LEVELS = [
@@ -58,12 +75,12 @@ export function renderRegister(app) {
 
         <div class="glass rounded-2xl border border-white/10 p-8 shadow-2xl">
 
-          <!-- College info banner -->
+          <!-- DOrSU banner -->
           <div class="flex items-center gap-3 p-3 rounded-xl bg-indigo-500/10 border border-indigo-500/20 mb-6">
             <span class="text-2xl">🎓</span>
             <div>
-              <div class="text-sm font-medium text-indigo-300">College / University Emergency Network</div>
-              <div class="text-xs text-slate-400">Your account will be registered as a Student</div>
+              <div class="text-sm font-medium text-indigo-300">Davao Oriental State University</div>
+              <div class="text-xs text-slate-400">DOrSU Student Emergency Network — Mati City, Davao Oriental</div>
             </div>
           </div>
 
@@ -111,11 +128,22 @@ export function renderRegister(app) {
             <div>
               <div class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3">Academic Information</div>
               <div>
-                <label class="block text-sm font-medium text-slate-300 mb-2">College / University *</label>
+                <label class="block text-sm font-medium text-slate-300 mb-2">University</label>
                 <div class="relative">
                   <i class="fa-solid fa-building-columns absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-sm"></i>
-                  <input type="text" id="organization" class="input pl-10" placeholder="e.g. Polytechnic University of the Philippines" required/>
+                  <input type="text" class="input pl-10 opacity-60 cursor-not-allowed" value="Davao Oriental State University" readonly/>
                 </div>
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-slate-300 mb-2">College / Department *</label>
+              <div class="relative">
+                <i class="fa-solid fa-sitemap absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-sm"></i>
+                <select id="college" class="input pl-10" required>
+                  <option value="">Select college...</option>
+                  ${DEPARTMENTS.map(d => `<option value="${d}">${d}</option>`).join('')}
+                </select>
               </div>
             </div>
 
@@ -264,10 +292,10 @@ export function renderRegister(app) {
       : courseVal;
     if (!course) { showToast('Please select or enter your course', 'error'); return; }
 
+    const college = document.getElementById('college').value;
     const yearLevel = document.getElementById('year-level').value;
     const section = document.getElementById('section').value.trim();
-    // department = "Year Level — Section" for display in admin panels
-    const department = section ? `${yearLevel} — ${section}` : yearLevel;
+    const department = section ? `${college} — ${yearLevel} — ${section}` : `${college} — ${yearLevel}`;
 
     const btn = document.getElementById('register-btn');
     const text = document.getElementById('register-text');
@@ -282,7 +310,7 @@ export function renderRegister(app) {
         username: document.getElementById('username').value.trim(),
         password,
         role: 'user',
-        organization: document.getElementById('organization').value.trim(),
+        organization: 'Davao Oriental State University',
         department,
         phone: document.getElementById('phone').value.trim() || undefined,
         studentId: document.getElementById('student-id').value.trim(),
