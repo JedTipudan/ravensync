@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ravensync-v1';
+const CACHE_NAME = 'ravensync-v2';
 const STATIC_ASSETS = ['/', '/index.html', '/css/main.css', '/js/app.js', '/manifest.json'];
 
 self.addEventListener('install', (event) => {
@@ -19,8 +19,13 @@ self.addEventListener('activate', (event) => {
 
 self.addEventListener('fetch', (event) => {
   if (event.request.url.includes('/api/')) return;
+  // Never intercept JS module requests — let them fail naturally if missing
+  if (event.request.destination === 'script' || event.request.destination === 'worker') return;
   event.respondWith(
-    caches.match(event.request).then(cached => cached || fetch(event.request).catch(() => caches.match('/')))
+    caches.match(event.request).then(cached => cached || fetch(event.request).catch(() => {
+      // Only fallback to index.html for navigation requests, not assets
+      if (event.request.mode === 'navigate') return caches.match('/');
+    }))
   );
 });
 
