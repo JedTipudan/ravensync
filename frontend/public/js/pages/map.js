@@ -110,6 +110,26 @@ export function renderMap(app) {
   initMap(isAdmin, user);
 }
 
+function showGuideAlert(message, from) {
+  const existing = document.getElementById('guide-alert');
+  if (existing) existing.remove();
+  const el = document.createElement('div');
+  el.id = 'guide-alert';
+  el.style.cssText = 'position:fixed;top:80px;left:50%;transform:translateX(-50%);z-index:9999;width:90%;max-width:420px;';
+  el.innerHTML = `
+    <div class="flex items-start gap-4 px-5 py-4 rounded-2xl bg-indigo-600 text-white shadow-2xl border border-indigo-400">
+      <span class="text-3xl flex-shrink-0">🧭</span>
+      <div class="flex-1">
+        <div class="font-black text-sm">Guidance from ${from || 'Admin'}</div>
+        <div class="text-sm mt-1 opacity-90">${message}</div>
+      </div>
+      <button onclick="document.getElementById('guide-alert').remove()" class="text-white/60 hover:text-white text-xl">&times;</button>
+    </div>
+  `;
+  document.body.appendChild(el);
+  setTimeout(() => el?.remove(), 15000);
+}
+
 function initMap(isAdmin, user) {
   let pinMode = false;
   let pins = [];   // admin pins from DB
@@ -282,7 +302,11 @@ function initMap(isAdmin, user) {
           <div class="text-sm font-medium">${p.label || 'Unknown User'}</div>
           <div class="text-xs text-slate-400">${p.time || ''}</div>
         </div>
-        <button onclick="removeUserPin('${p.userId}')" class="text-xs text-red-400 hover:text-red-300" title="Remove pin">
+        <button onclick="openGuideUser('${p.userId}', '${(p.label||'User').replace(/'/g,"\\'")}')"
+          class="btn btn-primary text-xs px-2 py-1" title="Send guidance">
+          <i class="fa-solid fa-location-arrow"></i> Guide
+        </button>
+        <button onclick="removeUserPin('${p.userId}')" class="text-xs text-red-400 hover:text-red-300 ml-1" title="Remove pin">
           <i class="fa-solid fa-xmark"></i>
         </button>
       </div>
@@ -399,13 +423,71 @@ function initMap(isAdmin, user) {
     });
   }
 
+  // User: receive guide messages from admin
+  let offGuideMsg;
+  if (!isAdmin) {
+    offGuideMsg = on('GUIDE_MESSAGE', (msg) => {
+      const d = msg.data;
+      showGuideAlert(d.message, d.from);
+    });
+  }
+
   // Cleanup listeners when SPA navigates away
   const cleanup = () => {
     offAdminPins?.();
     offLocationShare?.();
+    offGuideMsg?.();
     document.removeEventListener('spa:navigate', cleanup);
   };
   document.addEventListener('spa:navigate', cleanup);
+
+  window.openGuideUser = (userId, userName) => {
+    const QUICK = [
+      '🚨 Proceed to nearest exit immediately!',
+      '🏁 Go to Assembly Area now!',
+      '🏥 First Aid station is nearby — proceed there!',
+      '⚠️ Hazard ahead — change your route!',
+      '✅ You are safe — stay where you are.',
+    ];
+    const existing = document.getElementById('guide-modal');
+    if (existing) existing.remove();
+    const modal = document.createElement('div');
+    modal.id = 'guide-modal';
+    modal.className = 'modal-overlay';
+    modal.innerHTML = `
+      <div class="modal p-5 max-w-sm w-full">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="font-bold text-base">🧭 Guide: ${userName}</h2>
+          <button onclick="document.getElementById('guide-modal').remove()" class="text-slate-400 hover:text-white text-xl">&times;</button>
+        </div>
+        <div class="space-y-2 mb-4">
+          ${QUICK.map(q => `
+            <button onclick="sendGuide('${userId}', \`${q}\`)"
+              class="w-full text-left px-3 py-2 rounded-xl bg-white/5 hover:bg-indigo-500/20 border border-white/8 text-sm transition-colors">
+              ${q}
+            </button>
+          `).join('')}
+        </div>
+        <div class="flex gap-2">
+          <input id="guide-custom" type="text" class="input flex-1 text-sm" placeholder="Custom message..."/>
+          <button onclick="sendGuide('${userId}', document.getElementById('guide-custom').value)"
+            class="btn btn-primary px-3">
+            <i class="fa-solid fa-paper-plane"></i>
+          </button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+  };
+
+  window.sendGuide = (targetUserId, message) => {
+    if (!message?.trim()) return;
+    import('../services/websocket.js').then(({ sendRaw }) => {
+      sendRaw({ type: 'GUIDE_USER', targetUserId, message: message.trim(), fromName: user?.name || 'Admin' });
+      showToast('🧭 Guidance sent!', 'success');
+      document.getElementById('guide-modal')?.remove();
+    });
+  };
 
   renderPins();
   applyTransform();

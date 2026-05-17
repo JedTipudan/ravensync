@@ -46,7 +46,7 @@ app.use(compression({
   }
 }));
 
-// Rate limiting — relaxed in development for demo/testing
+// Rate limiting — relaxed in development, higher limits for auth routes
 const limitWindow = parseInt(process.env.RATE_LIMIT_WINDOW) || 15;
 const limitMax = parseInt(process.env.RATE_LIMIT_MAX) || 100;
 const limiter = rateLimit({
@@ -55,6 +55,13 @@ const limiter = rateLimit({
   message: { success: false, message: 'Too many requests, please try again later' },
   skip: (req) => process.env.NODE_ENV === 'development',
 });
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 500,
+  message: { success: false, message: 'Too many requests, please try again later' },
+  skip: (req) => process.env.NODE_ENV === 'development',
+});
+app.use('/api/auth', authLimiter);
 app.use('/api/', limiter);
 
 // Body parsing

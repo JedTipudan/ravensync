@@ -22,11 +22,11 @@ services:
     volumes:
       - kafka_data:/var/lib/kafka/data
     healthcheck:
-      test: ['CMD', '/opt/kafka/bin/kafka-topics.sh', '--bootstrap-server', 'localhost:9092', '--list']
+      test: ['CMD-SHELL', '/opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:9092 --list || exit 1']
       interval: 30s
       timeout: 15s
       retries: 5
-      start_period: 30s
+      start_period: 60s
 
   mongo:
     image: mongo:7

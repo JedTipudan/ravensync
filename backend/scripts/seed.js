@@ -12,35 +12,13 @@ const seed = async () => {
 
     await Promise.all([User.deleteMany(), Alert.deleteMany(), Channel.deleteMany()]);
 
-    const superadmin = await User.create({
-      name: 'Super Administrator',
-      username: 'superadmin',
-      password: 'super123',
-      role: 'superadmin',
-      organization: 'RavenSync School',
-      department: 'Administration',
-      isActive: true,
-      isVerified: true,
-    });
-
     const admin = await User.create({
       name: 'Administrator',
       username: 'admin',
-      password: 'admin',
+      password: 'admin123',
       role: 'superadmin',
       organization: 'RavenSync School',
       department: 'Administration',
-      isActive: true,
-      isVerified: true,
-    });
-
-    const student = await User.create({
-      name: 'Maria Santos',
-      username: 'student',
-      password: 'student123',
-      role: 'user',
-      organization: 'RavenSync School',
-      department: 'Grade 10 - Section A',
       isActive: true,
       isVerified: true,
     });
@@ -53,18 +31,28 @@ const seed = async () => {
         description: 'Primary emergency communication channel',
         type: 'emergency',
         lockedDuringEmergency: true,
-        createdBy: superadmin._id,
-        members: [superadmin._id, admin._id, student._id],
+        createdBy: admin._id,
+        members: [admin._id],
         icon: '🚨',
         color: '#ef4444',
+      },
+      {
+        name: '🚨 Emergency Broadcasts',
+        description: 'Official emergency broadcast channel',
+        type: 'emergency',
+        lockedDuringEmergency: true,
+        createdBy: admin._id,
+        members: [admin._id],
+        icon: '🚨',
+        color: '#dc2626',
       },
       {
         name: 'General Announcements',
         description: 'School-wide announcements and official notices',
         type: 'broadcast',
         lockedDuringEmergency: true,
-        createdBy: superadmin._id,
-        members: [superadmin._id, admin._id, student._id],
+        createdBy: admin._id,
+        members: [admin._id],
         icon: '📢',
         color: '#6366f1',
       },
@@ -73,8 +61,8 @@ const seed = async () => {
         description: 'Open space for safety tips, weather updates, preparedness discussions, and community support.',
         type: 'public',
         lockedDuringEmergency: false,
-        createdBy: superadmin._id,
-        members: [superadmin._id, admin._id, student._id],
+        createdBy: admin._id,
+        members: [admin._id],
         icon: '🛡️',
         color: '#10b981',
       },
@@ -103,9 +91,7 @@ const seed = async () => {
 
     logger.info('✅ Alerts created');
     logger.info('\n🎉 Database seeded successfully!');
-    logger.info('👤 superadmin / super123');
     logger.info('👤 admin / admin123');
-    logger.info('👤 student / student123');
     process.exit(0);
   } catch (error) {
     logger.error('Seed failed:', error);

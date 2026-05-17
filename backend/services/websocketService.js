@@ -42,7 +42,18 @@ const initWebSocket = (server) => {
             { userId, name: d.name, x: d.x, y: d.y, time: d.time },
             { upsert: true, new: true }
           ).catch(() => {});
-          broadcastToAll({ type: 'LOCATION_SHARE', data: { ...d, userId } });
+          // Notify all admins
+          clients.forEach((clientWs, clientId) => {
+            if (clientId !== userId && clientWs.readyState === WebSocket.OPEN) {
+              clientWs.send(JSON.stringify({ type: 'LOCATION_SHARE', data: { ...d, userId } }));
+            }
+          });
+        }
+        if (msg.type === 'GUIDE_USER' && userId) {
+          const target = clients.get(msg.targetUserId);
+          if (target && target.readyState === WebSocket.OPEN) {
+            target.send(JSON.stringify({ type: 'GUIDE_MESSAGE', data: { message: msg.message, from: msg.fromName } }));
+          }
         }
       } catch (e) { /* ignore */ }
     });
@@ -94,4 +105,4 @@ const getStats = () => ({
   serverStatus: wss ? 'running' : 'stopped',
 });
 
-module.exports = { initWebSocket, broadcastToAll, broadcastToChannel, sendToUser, getStats };
+module.exports = { initWebSocket, broadcastToAll, broadcastToChannel, sendToUser, getStats, getClients: () => clients };

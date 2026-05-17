@@ -36,7 +36,7 @@ Open: **http://localhost:5000**
 
 | Role | Username | Password |
 |------|----------|----------|
-| Super Admin | admin | admin |
+| Super Admin | admin | admin123 |
 | Super Admin | superadmin | super123 |
 | User | student | student123 |
 
