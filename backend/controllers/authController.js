@@ -17,7 +17,7 @@ const uploadAvatar = multer({
   },
 }).single('avatar');
 
-const generateToken = (id) => jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRE });
+const generateToken = (id) => jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: '7d' });
 
 exports.register = async (req, res, next) => {
   try {
