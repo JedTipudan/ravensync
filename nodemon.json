@@ -1,5 +1,0 @@
-{
-  "watch": ["*.js", "controllers", "routes", "middlewares", "services", "models", "config", "utils"],
-  "ext": "js,json",
-  "ignore": ["_rs_*.js", "backups", "logs", "uploads", "xml", "scripts", "xslt"]
-}
