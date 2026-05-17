@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<RavenSyncAlerts xmlns="http://ravensync.io/alerts" version="1.0" generatedAt="2026-05-17T02:23:23.705Z">
+  <Summary>
+    <TotalAlerts>0</TotalAlerts>
+    <GeneratedAt>2026-05-17T02:23:23.709Z</GeneratedAt>
+    <Platform>RavenSync Emergency Communication Platform</Platform>
+  </Summary>
+  <Alerts/>
+</RavenSyncAlerts>

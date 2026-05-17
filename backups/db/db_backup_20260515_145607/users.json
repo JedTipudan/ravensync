@@ -1,0 +1,43 @@
+[
+  {
+    "_id": "6a06c27c310a4c1422b0165f",
+    "name": "Super Administrator",
+    "username": "admin",
+    "password": "$2a$12$M5XJbjUUmerrUhiG5soBn.OkESlNgEWFxgy02mIBz7QIQZ6g/fydy",
+    "role": "superadmin",
+    "isActive": true,
+    "isVerified": true,
+    "avatar": null,
+    "channels": [],
+    "chatWarnings": 0,
+    "mutedUntil": null,
+    "notificationPreferences": {
+      "email": true,
+      "push": true,
+      "sms": false
+    },
+    "createdAt": "2026-05-15T06:51:40.057Z",
+    "updatedAt": "2026-05-15T06:51:40.057Z",
+    "lastLogin": "2026-05-15T06:54:02.692Z"
+  },
+  {
+    "_id": "6a06c27c310a4c1422b01660",
+    "name": "Jed",
+    "username": "jed",
+    "password": "$2a$12$tV/4.44BSjNrRDQ2KnTVL.cuNkFywWmmjRKcVFKzwDem2Z4j/NL6K",
+    "role": "user",
+    "isActive": true,
+    "isVerified": true,
+    "avatar": null,
+    "channels": [],
+    "chatWarnings": 0,
+    "mutedUntil": null,
+    "notificationPreferences": {
+      "email": true,
+      "push": true,
+      "sms": false
+    },
+    "createdAt": "2026-05-15T06:51:40.057Z",
+    "updatedAt": "2026-05-15T06:51:40.057Z"
+  }
+]

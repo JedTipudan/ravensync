@@ -1,0 +1,57 @@
+[
+  {
+    "_id": "6a06a5f0c7c9e34cd6e73b18",
+    "name": "Emergency Response Network",
+    "description": "Primary emergency communication channel",
+    "type": "emergency",
+    "createdBy": "6a06a5f0c7c9e34cd6e73b16",
+    "members": [
+      "6a06a5f0c7c9e34cd6e73b16"
+    ],
+    "admins": [],
+    "isActive": true,
+    "icon": "🚨",
+    "color": "#ef4444",
+    "messageCount": 2,
+    "lastActivity": "2026-05-15T05:03:07.958Z",
+    "createdAt": "2026-05-15T04:49:52.446Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a06a5f0c7c9e34cd6e73b19",
+    "name": "General Announcements",
+    "description": "Community-wide announcements",
+    "type": "broadcast",
+    "createdBy": "6a06a5f0c7c9e34cd6e73b16",
+    "members": [
+      "6a06a5f0c7c9e34cd6e73b16"
+    ],
+    "admins": [],
+    "isActive": true,
+    "icon": "📢",
+    "color": "#6366f1",
+    "messageCount": 1,
+    "lastActivity": "2026-05-15T05:02:51.116Z",
+    "createdAt": "2026-05-15T04:49:52.447Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a06a5f0c7c9e34cd6e73b1a",
+    "name": "Community Safety Hub",
+    "description": "Open space for safety tips, weather updates, preparedness discussions, and community support.",
+    "type": "public",
+    "createdBy": "6a06a5f0c7c9e34cd6e73b16",
+    "members": [
+      "6a06a5f0c7c9e34cd6e73b16"
+    ],
+    "admins": [],
+    "isActive": true,
+    "icon": "🛡️",
+    "color": "#06b6d4",
+    "messageCount": 10,
+    "lastActivity": "2026-05-15T06:08:56.698Z",
+    "createdAt": "2026-05-15T04:49:52.447Z",
+    "__v": 0,
+    "lockedDuringEmergency": false
+  }
+]
