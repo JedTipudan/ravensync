@@ -9,6 +9,7 @@
 ### Prerequisites
 - Node.js 18+
 - MongoDB (local or Atlas)
+- Docker (optional — for Kafka + MongoDB containers)
 - Kafka or RedPanda (optional — falls back to offline queue automatically)
 
 ### Installation
@@ -21,7 +22,7 @@ npm install
 # 2. Configure environment
 # Edit backend/.env with your MongoDB URI
 
-# 3. Seed demo data
+# 3. Seed demo data (creates default admin account + channels)
 node scripts/seed.js
 
 # 4. Start the server
@@ -30,6 +31,28 @@ npm run dev
 
 Open: **http://localhost:5000**
 
+### Running with Docker (Offline / Local Demo)
+
+```powershell
+# Start MongoDB + Kafka + Kafka UI
+docker compose up -d
+
+# Stop all containers
+docker compose down
+
+# Stop and wipe all data (fresh start)
+docker compose down -v
+```
+
+Services started by Docker:
+| Container | Image | Port |
+|-----------|-------|------|
+| ravensync-mongo | mongo:7.0 | 27017 |
+| ravensync-kafka | apache/kafka:3.7.0 | 9092 |
+| ravensync-kafka-ui | provectuslabs/kafka-ui | 8080 |
+
+> Kafka UI available at **http://localhost:8080** — monitor topics and messages.
+
 ---
 
 ## 🔑 Demo Credentials
@@ -37,10 +60,9 @@ Open: **http://localhost:5000**
 | Role | Username | Password |
 |------|----------|----------|
 | Super Admin | admin | admin123 |
-| Super Admin | superadmin | super123 |
-| User | student | student123 |
 
 > Login uses **username**, not email.
+> To change credentials, edit `backend/scripts/seed.js` and re-run `node scripts/seed.js`.
 
 ---
 
@@ -59,21 +81,22 @@ RavenSync/
 │   ├── config/             # DB, Logger
 │   ├── xml/                # Generated XML Files
 │   ├── xslt/               # XSLT Stylesheets
-│   ├── scripts/            # PowerShell Automation
+│   ├── scripts/            # PowerShell Automation + seed.js
 │   ├── backups/db/         # Database Backup ZIPs
 │   ├── logs/               # Application Logs
 │   ├── nodemon.json        # Nodemon watch config
 │   └── server.js           # Entry Point
-└── frontend/
-    └── public/
-        ├── css/            # Custom CSS (light + dark theme)
-        ├── js/
-        │   ├── pages/      # Page Components
-        │   ├── services/   # API, WebSocket, Auth, Theme, Notifications
-        │   ├── components/ # Sidebar, NotificationBell
-        │   ├── utils/      # Helpers, Toast
-        │   └── app.js      # SPA Router
-        └── index.html      # Entry Point
+├── frontend/
+│   └── public/
+│       ├── css/            # Custom CSS (light + dark theme)
+│       ├── js/
+│       │   ├── pages/      # Page Components
+│       │   ├── services/   # API, WebSocket, Auth, Theme, Notifications
+│       │   ├── components/ # Sidebar, NotificationBell
+│       │   ├── utils/      # Helpers, Toast
+│       │   └── app.js      # SPA Router
+│       └── index.html      # Entry Point
+└── docker-compose.yml      # MongoDB + Kafka + Kafka UI
 ```
 
 ---
@@ -94,6 +117,7 @@ RavenSync/
 | Automation | PowerShell scripts + node-cron |
 | PWA | Service Worker + Web Manifest |
 | Theming | CSS variables — light default, dark optional |
+| Containers | Docker + Docker Compose |
 
 ---
 
@@ -113,8 +137,12 @@ RavenSync/
 ### Channels
 - `GET /api/channels` — List channels
 - `POST /api/channels` — Create channel
+- `PATCH /api/channels/:id` — Edit channel (admin/superadmin)
+- `DELETE /api/channels/:id` — Delete channel (admin/superadmin)
 - `GET /api/channels/:id/messages` — Get messages
 - `POST /api/channels/:id/messages` — Send message
+- `PATCH /api/channels/messages/:msgId` — Edit message (own or admin)
+- `DELETE /api/channels/messages/:msgId` — Delete message (own or admin)
 
 ### Map
 - `GET /api/map/admin-pins` — Get all admin pins (all authenticated users)
@@ -145,8 +173,14 @@ RavenSync/
 
 ### Admin
 - `GET /api/admin/dashboard` — Dashboard stats
-- `GET /api/admin/users` — User management
+- `GET /api/admin/users` — List users
+- `POST /api/admin/users` — Create user (superadmin)
+- `PUT /api/admin/users/:id` — Update user
+- `DELETE /api/admin/users/:id` — Permanently delete user (superadmin)
 - `GET /api/admin/audit-logs` — Audit trail
+- `GET /api/admin/word-filter` — Get filtered words
+- `POST /api/admin/word-filter` — Add word to filter (superadmin)
+- `DELETE /api/admin/word-filter/:id` — Remove word from filter (superadmin)
 
 ### Announcements
 - `GET /api/announcements` — List announcements
@@ -163,15 +197,37 @@ RavenSync/
 - **Admin pins are saved to MongoDB** and visible to all users in real-time
 - Users can share their location by clicking on the map
 - Admin sees all user locations live with name and timestamp
+- **Guide User** — admin can send directional messages to specific users with quick presets or custom text
+- Users receive a prominent alert banner when admin sends guidance
 - Live updates via WebSocket — no refresh needed
 - WebSocket listeners are cleaned up on page navigation to prevent memory leaks
+
+---
+
+## 💬 Channel Features
+- 4 default channels: Emergency Response Network, Emergency Broadcasts, General Announcements, Community Safety Hub
+- Admin/superadmin can **edit** and **delete** any channel (hover to reveal buttons)
+- Admin/superadmin can **edit** and **delete** any message
+- Regular users can only edit/delete their own messages
+- Profanity filter with warning system — 3 warnings → muted (5/10/15 min escalating)
+- Rate limiting — 5 seconds between messages for regular users
+- Reply-to-message support
+- Real-time delivery via WebSocket
+
+---
+
+## 👥 User Management
+- Superadmin can create, deactivate/activate, and **permanently delete** users
+- Accessible via **Manage Users** in the sidebar
+- Role options: `superadmin`, `admin` (Instructor), `user` (Student)
+- Word filter manager — block custom words from all channels
 
 ---
 
 ## 🔐 Security Features
 - JWT Bearer token authentication (7d expiry)
 - bcrypt password hashing (12 rounds)
-- Rate limiting (100 req/15min)
+- Rate limiting — 500 req/15min for auth routes, 100 req/15min for all others
 - MongoDB injection sanitization
 - Helmet security headers
 - Role-based access control (superadmin / admin / user)
@@ -220,8 +276,6 @@ powershell -File scripts/db-restore.ps1 -Latest -Force
 powershell -File scripts/db-restore.ps1 -BackupFile ".\backups\db\db_backup_20250515_143734.zip" -Force
 ```
 
-Backups are saved to `backend/backups/db/` as timestamped ZIP files and visible in the **Database Backups** panel in the Automation Center.
-
 ---
 
 ## ☁️ Production Deployment (Render + MongoDB Atlas + RedPanda)
@@ -253,7 +307,7 @@ RedPanda is a Kafka-API compatible broker — `kafkajs` connects to it with no c
 - Required topics: `emergency.alerts`, `notifications`, `broadcasts`, `dead.letter`
 
 ### Seeding the Database on Production
-Run locally pointing to Atlas:
+Run locally pointing to Atlas (requires mobile hotspot if on Globe WiFi — SRV DNS is blocked):
 ```powershell
 cd backend
 $env:MONGODB_URI="mongodb+srv://<user>:<pass>@cluster.mongodb.net/ravensync"
@@ -264,7 +318,7 @@ node scripts/seed.js
 
 ## 🌗 Light & Dark Mode
 - **Light mode** is the default — clean white UI, high contrast for bright environments
-- **Dark mode** is optional — deep black backgrounds (`#0a0a0f`), vivid accent colors, readable even in a completely dark room
+- **Dark mode** is optional — deep black backgrounds (`#0a0a0f`), vivid accent colors
 - Toggle via the **sidebar button** (moon/sun icon) — preference saved in localStorage
 - Also toggleable from the **landing page navbar**
 
@@ -275,8 +329,6 @@ node scripts/seed.js
 - Notifications for: new alerts, announcements, messages, student help requests
 - **Mark all read** and **Clear all** buttons
 - Notifications auto-clear when server restarts (WebSocket reconnect detection)
-- Desktop panel: 420px wide solid dark background
-- Mobile panel: same style, anchored to right edge
 
 ---
 
@@ -290,15 +342,22 @@ node scripts/seed.js
 
 ## 🛠️ Development Notes
 
-### Nodemon Configuration
-`nodemon.json` watches only source directories and ignores `backups/`, `logs/`, `xml/`, `scripts/`, and temp files (`_rs_*.js`) to prevent server restarts during script execution.
+### Seed Script (`backend/scripts/seed.js`)
+- Wipes all users, alerts, and channels then recreates them from scratch
+- Only one account is created by default: `admin / admin123` (superadmin)
+- To add more users or channels, edit the seed file — comments explain each section
+- **Warning:** Running seed on production will delete all existing data
 
-### Known Credentials After Fresh Seed
-```
-superadmin → username: superadmin   password: super123
-admin      → username: admin        password: admin
-user       → username: student      password: student123
-```
+### Default Channels After Seed
+| Channel | Type | Who Can Post |
+|---------|------|-------------|
+| Emergency Response Network | emergency | Admin only |
+| 🚨 Emergency Broadcasts | emergency | Admin only |
+| General Announcements | broadcast | Admin only |
+| Community Safety Hub | public | Everyone |
+
+### Nodemon Configuration
+`nodemon.json` watches only source directories and ignores `backups/`, `logs/`, `xml/`, `scripts/`, and temp files to prevent server restarts during script execution.
 
 ### MongoDB ObjectId Note
 Always use `node scripts/seed.js` to create users. Manual insertion must use `new mongoose.Types.ObjectId()` for `_id` — plain string IDs will break Mongoose's `save()` and `findById()`.
