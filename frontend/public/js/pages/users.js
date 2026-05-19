@@ -181,6 +181,7 @@ export function renderUsers(app) {
   });
 
   window.toggleUserStatus = toggleUserStatus;
+  window.deleteUser = deleteUser;
   window.changeUserRole = changeUserRole;
   window.showCreateUserModal = () => document.getElementById('create-user-modal')?.classList.remove('hidden');
   window.hideCreateUserModal = () => document.getElementById('create-user-modal')?.classList.add('hidden');
@@ -226,10 +227,15 @@ async function loadUsers(filters = {}) {
         </td>
         <td class="text-xs text-slate-500">${u.lastLogin ? timeAgo(u.lastLogin) : 'Never'}</td>
         <td>
+          <div class="flex items-center gap-1">
           <button onclick="toggleUserStatus('${u._id}', ${u.isActive})"
             class="btn btn-ghost text-xs py-1 px-2 ${u.isActive ? 'text-red-400 hover:bg-red-500/10' : 'text-emerald-400 hover:bg-emerald-500/10'}">
             ${u.isActive ? 'Deactivate' : 'Activate'}
           </button>
+          <button onclick="deleteUser('${u._id}', '${u.name.replace(/'/g, "\\'")}')" class="btn btn-ghost text-xs py-1 px-2 text-red-500 hover:bg-red-500/10">
+            <i class="fa-solid fa-trash"></i>
+          </button>
+          </div>
         </td>
       </tr>
     `).join('');
@@ -256,6 +262,9 @@ async function loadUsers(filters = {}) {
               class="text-xs ${u.isActive ? 'text-red-400' : 'text-emerald-400'}">
               ${u.isActive ? 'Deactivate' : 'Activate'}
             </button>
+            <button onclick="deleteUser('${u._id}', '${u.name.replace(/'/g, "\\'")}')" class="text-xs text-red-500">
+              <i class="fa-solid fa-trash"></i>
+            </button>
           </div>
         </div>
       `).join('');
@@ -272,6 +281,17 @@ async function toggleUserStatus(userId, isActive) {
     loadUsers();
   } catch (err) {
     showToast('Failed to update user', 'error');
+  }
+}
+
+async function deleteUser(userId, name) {
+  if (!confirm(`Permanently delete "${name}"? This cannot be undone.`)) return;
+  try {
+    await api.delete(`/admin/users/${userId}`);
+    showToast(`${name} deleted`, 'success');
+    loadUsers();
+  } catch (err) {
+    showToast(err.message || 'Failed to delete user', 'error');
   }
 }
 

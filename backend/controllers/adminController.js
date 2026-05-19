@@ -64,8 +64,10 @@ exports.updateUser = async (req, res, next) => {
 
 exports.deleteUser = async (req, res, next) => {
   try {
-    await User.findByIdAndUpdate(req.params.id, { isActive: false });
-    res.json({ success: true, message: 'User deactivated' });
+    if (req.params.id === req.user._id.toString())
+      return res.status(400).json({ success: false, message: 'Cannot delete your own account' });
+    await User.findByIdAndDelete(req.params.id);
+    res.json({ success: true, message: 'User deleted' });
   } catch (error) { next(error); }
 };
 
