@@ -49,9 +49,19 @@ exports.runScript = (req, res, next) => {
       });
     }
 
-    const command = process.platform === 'win32'
-      ? `powershell.exe -ExecutionPolicy Bypass -File "${scriptPath}" ${script.args || ''}`
-      : `pwsh -File "${scriptPath}" ${script.args || ''}`;
+    if (process.platform !== 'win32') {
+      return res.json({
+        success: true,
+        data: {
+          scriptId, scriptName: script.name,
+          output: `[INFO] PowerShell scripts are only supported on Windows.\n[INFO] Deploy on a Windows host or convert ${script.file} to a shell script to run on Linux.`,
+          duration: Date.now() - startTime,
+          exitCode: 0, executedAt: new Date(), executedBy: req.user.name, real: false,
+        },
+      });
+    }
+
+    const command = `powershell.exe -ExecutionPolicy Bypass -File "${scriptPath}" ${script.args || ''}`;
 
     // queue-consumer is long-running — cap at 5s and return what we get
     const timeout = script.id === 'queue-consumer' ? 5000 : 30000;
