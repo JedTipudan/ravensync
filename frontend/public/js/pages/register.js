@@ -154,14 +154,15 @@ export function renderRegister(app) {
                 <label class="block text-sm font-medium text-slate-300 mb-2">Student ID Number *</label>
                 <div class="relative">
                   <i class="fa-solid fa-id-card absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-sm"></i>
-                  <input type="text" id="student-id" class="input pl-10" placeholder="e.g. 2021-00123" required/>
+                  <input type="text" id="student-id" class="input pl-10" placeholder="e.g. 2021-00123" required maxlength="10" inputmode="numeric"/>
+                  <p class="text-xs text-slate-500 mt-1">Format: YYYY-NNNNN (e.g. 2021-00123)</p>
                 </div>
               </div>
               <div>
                 <label class="block text-sm font-medium text-slate-300 mb-2">Phone Number</label>
                 <div class="relative">
                   <i class="fa-solid fa-phone absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-sm"></i>
-                  <input type="tel" id="phone" class="input pl-10" placeholder="e.g. 09XX-XXX-XXXX"/>
+                  <input type="tel" id="phone" class="input pl-10" placeholder="e.g. 09171234567" inputmode="tel" maxlength="15"/>
                 </div>
               </div>
             </div>
@@ -265,6 +266,21 @@ export function renderRegister(app) {
     </div>
   `;
 
+  // Student ID masking — only digits, auto-insert dash after 4th digit
+  document.getElementById('student-id')?.addEventListener('input', (e) => {
+    let raw = e.target.value.replace(/[^0-9]/g, '');
+    if (raw.length > 4) raw = raw.slice(0, 4) + '-' + raw.slice(4, 9);
+    e.target.value = raw;
+    const valid = /^\d{4}-\d{5}$/.test(raw);
+    e.target.classList.toggle('border-red-500', raw.length > 0 && !valid);
+    e.target.classList.toggle('border-green-500', valid);
+  });
+
+  // Phone — only digits, +, dashes, spaces
+  document.getElementById('phone')?.addEventListener('input', (e) => {
+    e.target.value = e.target.value.replace(/[^0-9+\-\s]/g, '');
+  });
+
   // Update courses when college changes
   document.getElementById('college')?.addEventListener('change', (e) => {
     const courseSelect = document.getElementById('course');
@@ -307,6 +323,12 @@ export function renderRegister(app) {
     const confirm = document.getElementById('confirm-password').value;
     if (password !== confirm) { showToast('Passwords do not match', 'error'); return; }
 
+    const studentId = document.getElementById('student-id').value.trim();
+    if (!/^\d{4}-\d{5}$/.test(studentId)) {
+      showToast('Student ID must be in YYYY-NNNNN format (e.g. 2021-00123)', 'error');
+      return;
+    }
+
     const course = document.getElementById('course').value;
     if (!course) { showToast('Please select your course', 'error'); return; }
 
@@ -330,7 +352,7 @@ export function renderRegister(app) {
         organization: 'Davao Oriental State University',
         department,
         phone: document.getElementById('phone').value.trim() || undefined,
-        studentId: document.getElementById('student-id').value.trim(),
+        studentId,
         course,
         yearLevel,
         section: '',

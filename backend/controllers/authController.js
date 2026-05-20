@@ -22,8 +22,12 @@ const generateToken = (id) => jwt.sign({ id }, process.env.JWT_SECRET, { expires
 exports.register = async (req, res, next) => {
   try {
     const { name, username, email, password, organization, department, phone, studentId, course, yearLevel, section } = req.body;
+    if (!studentId || !/^\d{4}-\d{5}$/.test(studentId))
+      return res.status(400).json({ success: false, message: 'Student ID must be in YYYY-NNNNN format (e.g. 2021-00123)' });
+    if (phone && !/^[0-9+\-\s]{7,15}$/.test(phone))
+      return res.status(400).json({ success: false, message: 'Invalid phone number format' });
     if (await User.findOne({ username })) return res.status(400).json({ success: false, message: 'Username already taken' });
-    if (studentId && await User.findOne({ studentId })) return res.status(400).json({ success: false, message: 'Student ID already registered' });
+    if (await User.findOne({ studentId })) return res.status(400).json({ success: false, message: 'Student ID already registered' });
 
     const user = await User.create({
       name, username, email: email || undefined, password,
