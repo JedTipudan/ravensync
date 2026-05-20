@@ -277,25 +277,25 @@ async function parseSAXContent() {
 
   try {
     const res = await api.post('/xml/parse/sax', { xmlContent: input });
-    const events = res.data;
+    const { events, stats } = res.data;
     const results = document.getElementById('sax-results');
     if (results) {
-      const colors = { openTag: '#6ee7b7', closeTag: '#fca5a5', text: '#fde68a', error: '#f87171' };
+      const colors = { openTag: '#6ee7b7', closeTag: '#fca5a5', text: '#fde68a' };
       results.innerHTML = events.map(ev => {
-        const color = colors[ev.type] || '#94a3b8';
-        const detail = ev.name ? ` <span style="color:#94a3b8">${ev.name}${ev.attributes && Object.keys(ev.attributes).length ? ' ' + JSON.stringify(ev.attributes) : ''}</span>` : (ev.text ? ` <span style="color:#e2e8f0">${escapeHtml(ev.text)}</span>` : '');
-        return `<div><span style="color:${color}">[${ev.type}]</span>${detail}</div>`;
+        const color = colors[ev.event] || '#94a3b8';
+        const detail = ev.element
+          ? ` <span style="color:#94a3b8">${ev.element}${ev.attributes && Object.keys(ev.attributes).length ? ' ' + JSON.stringify(ev.attributes) : ''}</span>`
+          : ev.value ? ` <span style="color:#e2e8f0">${escapeHtml(ev.value)}</span>` : '';
+        return `<div><span style="color:${color}">[${ev.event}]</span>${detail}</div>`;
       }).join('');
     }
 
-    const stats = document.getElementById('sax-stats');
-    if (stats) {
-      const opens = events.filter(e => e.type === 'openTag').length;
-      const texts = events.filter(e => e.type === 'text').length;
-      stats.innerHTML = [
-        { label: 'Open Tags', value: opens },
-        { label: 'Text Nodes', value: texts },
-        { label: 'Total Events', value: events.length },
+    const saxStats = document.getElementById('sax-stats');
+    if (saxStats) {
+      saxStats.innerHTML = [
+        { label: 'Elements', value: stats.elementCount },
+        { label: 'Text Nodes', value: stats.textCount },
+        { label: 'Total Events', value: stats.totalEvents },
       ].map(s => `
         <div class="bg-white/5 rounded-lg p-2 text-center">
           <div class="text-sm font-bold text-indigo-400">${s.value}</div>
