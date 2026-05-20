@@ -67,20 +67,34 @@ export function renderXML(app) {
 
         <!-- Tab 1: Parser -->
         <div id="tab-content-1" class="hidden">
+          <div class="glass rounded-2xl border border-white/8 p-5 mb-6">
+            <div class="flex items-center justify-between mb-4">
+              <h2 class="font-bold">🔍 XML Input</h2>
+              <div class="flex gap-2">
+                <button onclick="parseXML()" class="btn btn-primary text-sm">
+                  <i class="fa-solid fa-code"></i> DOM Parse
+                </button>
+                <button onclick="parseSAX()" class="btn btn-ghost text-sm border border-indigo-500/40 text-indigo-400 hover:bg-indigo-500/10">
+                  <i class="fa-solid fa-stream"></i> SAX Parse
+                </button>
+              </div>
+            </div>
+            <textarea id="xml-input" class="input h-48 resize-none font-mono text-xs" placeholder="Paste XML content here to parse..."></textarea>
+          </div>
           <div class="grid lg:grid-cols-2 gap-6">
             <div class="glass rounded-2xl border border-white/8 p-5">
-              <h2 class="font-bold mb-4">🔍 XML Parser (DOM)</h2>
-              <textarea id="xml-input" class="input h-64 resize-none font-mono text-xs mb-3" placeholder="Paste XML content here to parse..."></textarea>
-              <button onclick="parseXML()" class="btn btn-primary w-full">
-                <i class="fa-solid fa-code"></i> Parse XML
-              </button>
-            </div>
-            <div class="glass rounded-2xl border border-white/8 p-5">
-              <h2 class="font-bold mb-4">📊 Parse Results</h2>
+              <h2 class="font-bold mb-3">📊 DOM Results <span class="text-xs text-slate-500 font-normal ml-1">— full object tree</span></h2>
               <div id="parse-results" class="bg-black/30 rounded-xl p-4 h-64 overflow-y-auto font-mono text-xs text-slate-300">
-                Parse results will appear here...
+                DOM parse results will appear here...
               </div>
               <div id="parse-stats" class="mt-3 grid grid-cols-3 gap-2"></div>
+            </div>
+            <div class="glass rounded-2xl border border-white/8 p-5">
+              <h2 class="font-bold mb-3">⚡ SAX Results <span class="text-xs text-slate-500 font-normal ml-1">— event stream</span></h2>
+              <div id="sax-results" class="bg-black/30 rounded-xl p-4 h-64 overflow-y-auto font-mono text-xs text-slate-300">
+                SAX parse results will appear here...
+              </div>
+              <div id="sax-stats" class="mt-3 grid grid-cols-3 gap-2"></div>
             </div>
           </div>
         </div>
@@ -163,6 +177,7 @@ function initXMLPage() {
   window.loadXMLFiles = loadXMLFiles;
   window.downloadAlertXML = downloadAlertXML;
   window.parseXML = parseXMLContent;
+  window.parseSAX = parseSAXContent;
   window.transformXML = transformXMLContent;
   window.loadSampleXML = loadSampleXML;
   window.downloadTransformed = downloadTransformed;
@@ -253,6 +268,44 @@ async function parseXMLContent() {
     showToast('XML parsed successfully', 'success');
   } catch (err) {
     showToast('XML parse error: ' + err.message, 'error');
+  }
+}
+
+async function parseSAXContent() {
+  const input = document.getElementById('xml-input')?.value?.trim();
+  if (!input) { showToast('Please enter XML content', 'warning'); return; }
+
+  try {
+    const res = await api.post('/xml/parse/sax', { xmlContent: input });
+    const events = res.data;
+    const results = document.getElementById('sax-results');
+    if (results) {
+      const colors = { openTag: '#6ee7b7', closeTag: '#fca5a5', text: '#fde68a', error: '#f87171' };
+      results.innerHTML = events.map(ev => {
+        const color = colors[ev.type] || '#94a3b8';
+        const detail = ev.name ? ` <span style="color:#94a3b8">${ev.name}${ev.attributes && Object.keys(ev.attributes).length ? ' ' + JSON.stringify(ev.attributes) : ''}</span>` : (ev.text ? ` <span style="color:#e2e8f0">${escapeHtml(ev.text)}</span>` : '');
+        return `<div><span style="color:${color}">[${ev.type}]</span>${detail}</div>`;
+      }).join('');
+    }
+
+    const stats = document.getElementById('sax-stats');
+    if (stats) {
+      const opens = events.filter(e => e.type === 'openTag').length;
+      const texts = events.filter(e => e.type === 'text').length;
+      stats.innerHTML = [
+        { label: 'Open Tags', value: opens },
+        { label: 'Text Nodes', value: texts },
+        { label: 'Total Events', value: events.length },
+      ].map(s => `
+        <div class="bg-white/5 rounded-lg p-2 text-center">
+          <div class="text-sm font-bold text-indigo-400">${s.value}</div>
+          <div class="text-xs text-slate-500">${s.label}</div>
+        </div>
+      `).join('');
+    }
+    showToast('SAX parse complete', 'success');
+  } catch (err) {
+    showToast('SAX parse error: ' + err.message, 'error');
   }
 }
 
