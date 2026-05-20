@@ -265,7 +265,15 @@ async function transformXMLContent() {
     const res = await api.post('/xml/transform', { xmlContent: input, format });
     const output = document.getElementById('xslt-output');
     if (output) {
-      output.innerHTML = `<pre class="text-green-400 text-xs whitespace-pre-wrap">${escapeHtml(res.data)}</pre>`;
+      if (format === 'html') {
+        output.innerHTML = res.data;
+        output.style.background = '#ffffff';
+        output.style.color = '#1a1a1a';
+      } else {
+        output.innerHTML = `<pre class="text-green-400 text-xs whitespace-pre-wrap">${escapeHtml(res.data)}</pre>`;
+        output.style.background = '';
+        output.style.color = '';
+      }
     }
     showToast(`Transformed to ${format.toUpperCase()} successfully`, 'success');
   } catch (err) {
@@ -295,12 +303,15 @@ function loadSampleXML() {
 }
 
 function downloadTransformed() {
-  const output = document.getElementById('xslt-output')?.textContent;
+  const outputEl = document.getElementById('xslt-output');
+  const format = document.getElementById('transform-format')?.value;
+  const output = format === 'html' ? outputEl?.innerHTML : outputEl?.textContent;
   if (!output || output.includes('Transformation output')) {
     showToast('No transformed content to download', 'warning');
     return;
   }
-  downloadFile(output, 'transformed_output.html', 'text/html');
+  const ext = format === 'json' ? 'json' : 'html';
+  downloadFile(output, `transformed_output.${ext}`, format === 'json' ? 'application/json' : 'text/html');
   showToast('Downloaded successfully', 'success');
 }
 

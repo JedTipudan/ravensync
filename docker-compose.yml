@@ -68,6 +68,27 @@ services:
     networks:
       - ravensync-net
 
+  rabbitmq:
+    image: rabbitmq:3.13-management
+    container_name: ravensync-rabbitmq
+    restart: unless-stopped
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - ravensync-net
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
 networks:
   ravensync-net:
     driver: bridge
@@ -76,3 +97,4 @@ volumes:
   mongo_data:
   mongo_config:
   kafka_data:
+  rabbitmq_data:

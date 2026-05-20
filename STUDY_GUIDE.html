@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RavenSync — Study Guide</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', sans-serif; background: #f8fafc; color: #1e293b; font-size: 13px; line-height: 1.6; }
+  .page { max-width: 900px; margin: 0 auto; padding: 40px 48px; }
+  h1 { font-size: 26px; font-weight: 800; color: #4f46e5; border-bottom: 3px solid #4f46e5; padding-bottom: 10px; margin-bottom: 6px; }
+  .subtitle { color: #64748b; font-size: 12px; margin-bottom: 32px; }
+  h2 { font-size: 15px; font-weight: 700; color: #fff; background: #4f46e5; padding: 7px 14px; border-radius: 6px; margin: 28px 0 12px; }
+  h3 { font-size: 13px; font-weight: 700; color: #4f46e5; margin: 16px 0 6px; }
+  p { margin-bottom: 8px; }
+  ul, ol { padding-left: 20px; margin-bottom: 8px; }
+  li { margin-bottom: 3px; }
+  code { background: #ede9fe; color: #4f46e5; padding: 1px 5px; border-radius: 4px; font-family: 'Consolas', monospace; font-size: 12px; }
+  pre { background: #1e1b4b; color: #c7d2fe; padding: 12px 16px; border-radius: 8px; font-size: 12px; margin: 8px 0 12px; overflow-x: auto; font-family: 'Consolas', monospace; }
+  table { width: 100%; border-collapse: collapse; margin: 10px 0 16px; font-size: 12px; }
+  th { background: #ede9fe; color: #4f46e5; padding: 7px 10px; text-align: left; font-weight: 700; border: 1px solid #ddd6fe; }
+  td { padding: 6px 10px; border: 1px solid #e2e8f0; vertical-align: top; }
+  tr:nth-child(even) td { background: #f8fafc; }
+  .qa-block { background: #f1f5f9; border-left: 4px solid #4f46e5; border-radius: 0 8px 8px 0; padding: 12px 16px; margin-bottom: 12px; }
+  .qa-block .q { font-weight: 700; color: #1e293b; margin-bottom: 4px; }
+  .qa-block .a { color: #334155; }
+  .ref-box { background: #fefce8; border: 1px solid #fde68a; border-radius: 8px; padding: 14px 18px; margin-top: 10px; }
+  .ref-box table th { background: #fef08a; color: #92400e; border-color: #fde68a; }
+  .ref-box table td { border-color: #fde68a; }
+  hr { border: none; border-top: 1px solid #e2e8f0; margin: 24px 0; }
+  @media print {
+    body { background: #fff; }
+    .page { padding: 20px 28px; }
+    h2 { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    th { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .qa-block { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    pre { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+<h1>🦅 RavenSync — Study Guide</h1>
+<p class="subtitle">Emergency Communication Platform &nbsp;|&nbsp; Instructor Q&amp;A Preparation</p>
+
+<h2>1. What is RavenSync?</h2>
+<p>RavenSync is a real-time emergency communication platform for schools, universities, barangays, and offices. It centralizes alerts, live location tracking, messaging channels, and automated notifications into one system. The name is inspired by ravens — birds historically used to deliver messages and signal danger.</p>
+
+<h2>2. Architecture &amp; Design Pattern</h2>
+<p><strong>Pattern: MVC (Model-View-Controller)</strong></p>
+<table>
+  <tr><th>Layer</th><th>Location</th><th>Role</th></tr>
+  <tr><td>Model</td><td><code>backend/models/</code></td><td>MongoDB schemas via Mongoose</td></tr>
+  <tr><td>View</td><td><code>frontend/public/</code></td><td>Vanilla JS SPA (no framework)</td></tr>
+  <tr><td>Controller</td><td><code>backend/controllers/</code></td><td>Business logic per feature</td></tr>
+</table>
+<p>The frontend is a <strong>Single Page Application (SPA)</strong> — <code>app.js</code> acts as the router, swapping page content without full reloads using <code>window.history.pushState</code>.</p>
+
+<h2>3. Tech Stack — Why Each Was Chosen</h2>
+<table>
+  <tr><th>Technology</th><th>Why</th></tr>
+  <tr><td>Node.js + Express</td><td>Non-blocking I/O — ideal for real-time apps with many concurrent connections</td></tr>
+  <tr><td>MongoDB + Mongoose</td><td>Schema-flexible NoSQL — good for varied alert/message structures</td></tr>
+  <tr><td>JWT</td><td>Stateless auth — no server-side session storage needed</td></tr>
+  <tr><td>bcrypt (12 rounds)</td><td>Industry-standard password hashing; 12 rounds balances security vs. speed</td></tr>
+  <tr><td>WebSocket (ws)</td><td>Full-duplex real-time communication — alerts and messages push instantly</td></tr>
+  <tr><td>Kafka / RedPanda</td><td>Durable broadcast message queue — fan-out alerts to all consumers, replayable</td></tr>
+  <tr><td>RabbitMQ (amqplib)</td><td>Task queue — async audit log writes, announcement dispatch, guaranteed guide-user delivery</td></tr>
+  <tr><td>xml2js + sax</td><td>Two XML parsing strategies: DOM (full tree) and SAX (event-driven, memory-efficient)</td></tr>
+  <tr><td>Tailwind CSS</td><td>Utility-first CSS — fast styling without writing custom CSS classes</td></tr>
+  <tr><td>Docker Compose</td><td>Reproducible local dev environment — one command starts MongoDB + Kafka + RabbitMQ</td></tr>
+</table>
+
+<h3>Why MongoDB Instead of XML as Database</h3>
+<p>XML is the <strong>data exchange and reporting format</strong> in RavenSync — not the primary database. MongoDB was chosen because RavenSync is a multi-user real-time platform where 50+ users connect simultaneously during emergencies.</p>
+<table>
+  <tr><th>Problem with XML as DB</th><th>Why it matters in RavenSync</th></tr>
+  <tr><td>No concurrent write protection</td><td>50+ users connecting simultaneously during an emergency corrupts the file</td></tr>
+  <tr><td>No atomic operations</td><td>A server crash mid-write leaves XML in a broken/unreadable state</td></tr>
+  <tr><td>Full file read on every query</td><td>Reading all alerts just to find one by severity requires loading the entire file</td></tr>
+  <tr><td>No indexing</td><td>Can’t efficiently filter by status, severity, or date</td></tr>
+  <tr><td>No relationships</td><td>Manually resolving user → alert → channel across multiple files</td></tr>
+</table>
+<p>XML is still central — all emergency data is <strong>exported, parsed (DOM + SAX), and transformed (XSLT)</strong> as XML. MongoDB is the write-safe storage layer behind it.</p>
+
+<h2>4. Authentication &amp; Authorization</h2>
+<h3>How login works (step by step):</h3>
+<ol>
+  <li>Client sends <code>POST /api/auth/login</code> with <code>{ username, password }</code></li>
+  <li>Server finds user by username, fetches password field (excluded by default via <code>select: false</code>)</li>
+  <li><code>bcrypt.compare()</code> checks the candidate password against the stored hash</li>
+  <li>If valid, <code>jwt.sign({ id }, JWT_SECRET, { expiresIn: '7d' })</code> generates a token</li>
+  <li>Token is returned to the client and stored in <code>localStorage</code></li>
+  <li>Every subsequent request sends <code>Authorization: Bearer &lt;token&gt;</code> in the header</li>
+</ol>
+<h3>How the protect middleware works:</h3>
+<pre>Request → extract Bearer token → jwt.verify() → find user in DB → attach to req.user → next()
+If token is missing, expired, or user is inactive → 401 Unauthorized</pre>
+<h3>Role-Based Access Control (RBAC):</h3>
+<table>
+  <tr><th>Role</th><th>Permissions</th></tr>
+  <tr><td><code>superadmin</code></td><td>Full access — create/delete users, manage word filter</td></tr>
+  <tr><td><code>admin</code></td><td>Manage alerts, channels, messages, map pins</td></tr>
+  <tr><td><code>user</code></td><td>Read channels, send messages in public channels, share location</td></tr>
+</table>
+<p>The <code>authorize(...roles)</code> middleware checks <code>req.user.role</code> against the allowed roles list.</p>
+
+<h2>5. Real-Time Communication — WebSocket</h2>
+<p><strong>File:</strong> <code>backend/services/websocketService.js</code></p>
+<h3>Connection flow:</h3>
+<ol>
+  <li>Client connects to <code>ws://localhost:5000/ws?token=&lt;JWT&gt;</code></li>
+  <li>Server verifies the JWT from the query string</li>
+  <li>Authenticated user is stored in a <code>Map&lt;userId, ws&gt;</code> called <code>clients</code></li>
+  <li>Server sends <code>{ type: 'CONNECTED' }</code> confirmation</li>
+</ol>
+<h3>Key WebSocket message types:</h3>
+<table>
+  <tr><th>Type</th><th>Direction</th><th>Purpose</th></tr>
+  <tr><td><code>SUBSCRIBE_CHANNEL</code></td><td>Client → Server</td><td>Join a channel room</td></tr>
+  <tr><td><code>NEW_ALERT</code></td><td>Server → All</td><td>Broadcast new emergency alert</td></tr>
+  <tr><td><code>NEW_MESSAGE</code></td><td>Server → Channel subscribers</td><td>Real-time chat message</td></tr>
+  <tr><td><code>LOCATION_SHARE</code></td><td>Client → Server → Admins</td><td>User shares map position</td></tr>
+  <tr><td><code>GUIDE_USER</code></td><td>Admin → Specific user</td><td>Send directional guidance</td></tr>
+  <tr><td><code>CHAT_WARNING</code></td><td>Server → User</td><td>Profanity warning notification</td></tr>
+  <tr><td><code>HEARTBEAT</code></td><td>Server → All</td><td>Keep-alive every 30 seconds</td></tr>
+  <tr><td><code>PING / PONG</code></td><td>Both</td><td>Connection health check</td></tr>
+</table>
+<h3>Why WebSocket over HTTP polling?</h3>
+<ul>
+  <li>HTTP polling wastes bandwidth — client asks "anything new?" repeatedly even when nothing changed</li>
+  <li>WebSocket keeps one persistent TCP connection — server pushes data only when an event occurs</li>
+  <li>Critical for emergencies where every second matters</li>
+</ul>
+
+<h2>6. Kafka / Message Queue</h2>
+<p><strong>File:</strong> <code>backend/services/messagingService.js</code></p>
+<h3>Topics used:</h3>
+<table>
+  <tr><th>Topic</th><th>Purpose</th></tr>
+  <tr><td><code>emergency.alerts</code></td><td>New emergency alerts</td></tr>
+  <tr><td><code>notifications</code></td><td>User notifications</td></tr>
+  <tr><td><code>broadcasts</code></td><td>Channel broadcasts</td></tr>
+  <tr><td><code>dead.letter</code></td><td>Failed messages for retry/inspection</td></tr>
+</table>
+<h3>Offline Queue Fallback:</h3>
+<p>If Kafka is unavailable, messages go into an in-memory <code>offlineQueue</code> array. When Kafka reconnects, <code>_flushOfflineQueue()</code> sends all pending messages automatically. This ensures <strong>zero message loss</strong>. Reconnect is retried every <strong>10 seconds</strong>.</p>
+<h3>Why Kafka?</h3>
+<ul>
+  <li><strong>Durability</strong> — messages persist on disk, survive server restarts</li>
+  <li><strong>Fan-out</strong> — one alert published to a topic reaches ALL consumers simultaneously</li>
+  <li><strong>Replayable</strong> — consumers can rewind and re-read past messages using offsets</li>
+  <li><strong>Decoupling</strong> — producer and consumer are fully independent</li>
+</ul>
+<h3>RedPanda Cloud (Production):</h3>
+<p>RedPanda is Kafka-API compatible. The only difference is SASL/SSL credentials in the config — no code changes needed. SASL mechanism: <code>scram-sha-256</code>.</p>
+
+<h2>6b. RabbitMQ — Task Queue</h2>
+<p><strong>File:</strong> <code>backend/services/rabbitMQService.js</code></p>
+<h3>Queues used:</h3>
+<table>
+  <tr><th>Queue</th><th>Purpose</th><th>Why RabbitMQ</th></tr>
+  <tr><td><code>audit.logs</code></td><td>Async audit log writes to MongoDB</td><td>Non-blocking — response goes out immediately, worker writes the log</td></tr>
+  <tr><td><code>announcements</code></td><td>Notification dispatch on announcement create</td><td>Guaranteed once-delivery per task</td></tr>
+  <tr><td><code>guide.user</code></td><td>Admin-to-user directional guidance</td><td>Point-to-point routing to one specific user</td></tr>
+</table>
+<h3>How it works:</h3>
+<ol>
+  <li><code>connectRabbitMQ()</code> connects to <code>amqp://localhost:5672</code> and declares all queues as <strong>durable</strong></li>
+  <li><code>publish(queue, payload)</code> sends with <code>persistent: true</code> — survives broker restart</li>
+  <li><code>consume(queue, handler)</code> registers a worker; calls <code>channel.ack()</code> after success</li>
+  <li>If handler throws, <code>channel.nack()</code> discards the message — no infinite retry loop</li>
+  <li>Falls back gracefully if RabbitMQ is down — zero breaking changes</li>
+</ol>
+<h3>Kafka vs RabbitMQ — Why Both?</h3>
+<table>
+  <tr><th>Scenario</th><th>Kafka</th><th>RabbitMQ</th></tr>
+  <tr><td>New alert → broadcast to ALL users</td><td>✅ fan-out</td><td>❌ duplicates</td></tr>
+  <tr><td>Audit log → write to DB async</td><td>❌ overkill</td><td>✅ task queue</td></tr>
+  <tr><td>Announcement → dispatch notification</td><td>❌</td><td>✅ once-delivery</td></tr>
+  <tr><td>Guide specific user</td><td>❌</td><td>✅ point-to-point</td></tr>
+  <tr><td>Replay past messages</td><td>✅</td><td>❌ deleted after consume</td></tr>
+</table>
+<p><strong>Key insight:</strong> Kafka is a log/stream — messages persist and many consumers read the same message. RabbitMQ is a post office — one message, one worker, then deleted. They solve different problems.</p>
+
+<h2>7. XML &amp; XSLT</h2>
+<p><strong>File:</strong> <code>backend/services/xmlService.js</code></p>
+<h3>DOM Parsing (xml2js):</h3>
+<ul>
+  <li>Loads the entire XML into memory as a JavaScript object tree</li>
+  <li>Good for small documents where you need random access to any element</li>
+  <li>Used in: <code>POST /api/xml/parse</code></li>
+</ul>
+<h3>SAX Parsing (sax module):</h3>
+<ul>
+  <li>Event-driven — fires callbacks for <code>openTag</code>, <code>closeTag</code>, <code>text</code></li>
+  <li>Never loads the full document — memory efficient for large files</li>
+  <li>Cannot go back to a previous element once passed</li>
+  <li>Used in: <code>POST /api/xml/parse/sax</code></li>
+</ul>
+<h3>XSLT Transformation:</h3>
+<p><code>POST /api/xml/transform</code> converts XML to either a styled HTML table report or JSON. Demonstrates separation of data (XML) from presentation (XSLT/HTML).</p>
+<h3>XML Namespaces used:</h3>
+<table>
+  <tr><th>Namespace</th><th>Used for</th></tr>
+  <tr><td><code>http://ravensync.io/alert</code></td><td>Single alert export</td></tr>
+  <tr><td><code>http://ravensync.io/alerts</code></td><td>Alert list export</td></tr>
+  <tr><td><code>http://ravensync.io/users</code></td><td>User export</td></tr>
+  <tr><td><code>http://ravensync.io/logs</code></td><td>Audit log export</td></tr>
+  <tr><td><code>http://ravensync.io/report</code></td><td>Analytics report</td></tr>
+</table>
+
+<h2>8. Database Models (MongoDB Schemas)</h2>
+<h3>User model highlights:</h3>
+<ul>
+  <li><code>password</code> has <code>select: false</code> — never returned in queries unless explicitly requested with <code>.select('+password')</code></li>
+  <li><code>pre('save')</code> hook auto-hashes password with bcrypt before storing</li>
+  <li><code>toJSON()</code> method strips the password field from any JSON response</li>
+  <li><code>mutedUntil</code> and <code>chatWarnings</code> fields track profanity violations</li>
+</ul>
+<h3>Alert model highlights:</h3>
+<table>
+  <tr><th>Field</th><th>Values</th></tr>
+  <tr><td><code>severity</code></td><td>critical | high | medium | low</td></tr>
+  <tr><td><code>status</code></td><td>active | resolved | scheduled | draft</td></tr>
+  <tr><td><code>type</code></td><td>emergency | warning | info | drill | announcement | weather | security</td></tr>
+</table>
+<ul>
+  <li>Compound indexes on <code>(status, severity, createdAt)</code> for fast filtered queries</li>
+  <li>Stores <code>xmlData</code> (generated XML) and <code>qrCode</code> (base64 data URL) per alert</li>
+</ul>
+<h3>Channel model highlights:</h3>
+<ul>
+  <li><code>type</code>: public | private | emergency | broadcast</li>
+  <li><code>lockedDuringEmergency</code> — prevents regular users from posting during active alerts</li>
+  <li>Emergency and broadcast channels are admin-only by default</li>
+</ul>
+
+<h2>9. Security Features</h2>
+<table>
+  <tr><th>Feature</th><th>Implementation</th><th>Why</th></tr>
+  <tr><td>JWT auth</td><td><code>jsonwebtoken</code>, 7-day expiry</td><td>Stateless, scalable auth</td></tr>
+  <tr><td>bcrypt hashing</td><td>12 rounds</td><td>Slow enough to resist brute force (~250ms per hash)</td></tr>
+  <tr><td>Rate limiting</td><td>100 req/15min general, 500 for auth routes</td><td>Prevents DoS and brute force attacks</td></tr>
+  <tr><td>MongoDB sanitization</td><td><code>express-mongo-sanitize</code></td><td>Prevents NoSQL injection (<code>$where</code>, <code>$gt</code> attacks)</td></tr>
+  <tr><td>Helmet</td><td><code>helmet</code> middleware</td><td>Sets secure HTTP headers (XSS, clickjacking protection)</td></tr>
+  <tr><td>RBAC</td><td><code>authorize()</code> middleware</td><td>Least-privilege access per role</td></tr>
+  <tr><td>Audit logging</td><td><code>auditLogger</code> middleware</td><td>Tracks every sensitive action with user, IP, timestamp</td></tr>
+  <tr><td>Auto-logout</td><td>Frontend checks 401 responses</td><td>Expired tokens force re-login automatically</td></tr>
+</table>
+
+<h2>10. Profanity Filter System</h2>
+<p><strong>File:</strong> <code>backend/utils/profanityFilter.js</code></p>
+<h3>How it works:</h3>
+<ol>
+  <li>Base word list (English + Filipino) is hardcoded in the file</li>
+  <li>Custom words are loaded from MongoDB <code>FilteredWord</code> collection at startup</li>
+  <li>Each word is converted to a regex handling leet-speak: <code>a→[a@4]</code>, <code>e→[e3]</code>, <code>i→[i1!]</code>, <code>o→[o0]</code>, <code>s→[s$5]</code></li>
+  <li><code>containsProfanity(text)</code> — returns boolean</li>
+  <li><code>censorText(text)</code> — replaces matches with <code>####</code></li>
+</ol>
+<h3>Warning/Mute escalation:</h3>
+<table>
+  <tr><th>Warning Count</th><th>Action</th></tr>
+  <tr><td>1 – 2</td><td>Warning only, no mute</td></tr>
+  <tr><td>3</td><td>Muted 5 minutes</td></tr>
+  <tr><td>4</td><td>Muted 10 minutes</td></tr>
+  <tr><td>5+</td><td>Muted 15 minutes each time</td></tr>
+</table>
+<p>User is notified via WebSocket <code>CHAT_WARNING</code> event in real-time.</p>
+
+<h2>11. SPA Router (Frontend)</h2>
+<p><strong>File:</strong> <code>frontend/public/js/app.js</code> — pure Vanilla JS ES Modules, no framework.</p>
+<h3>How routing works:</h3>
+<ol>
+  <li><code>routes</code> object maps URL paths to render functions</li>
+  <li><code>navigate(path)</code> calls <code>history.pushState()</code> then calls the matching render function</li>
+  <li><code>popstate</code> event handles browser back/forward buttons</li>
+  <li><code>requireAuth()</code> checks localStorage for a JWT before rendering protected pages</li>
+  <li>Role-based route guard: <code>/users</code> requires <code>superadmin</code> or <code>admin</code></li>
+</ol>
+<h3>Why no React/Vue?</h3>
+<ul>
+  <li>Demonstrates understanding of fundamentals without framework abstraction</li>
+  <li>Lighter bundle — no framework overhead</li>
+</ul>
+
+<h2>12. Audit Logging</h2>
+<p><strong>File:</strong> <code>backend/middlewares/auditLogger.js</code></p>
+<ul>
+  <li>Wraps <code>res.json()</code> — intercepts the response <em>after</em> the controller runs</li>
+  <li>Logs: action, resource, user, IP address, HTTP method, request body, status (success/failure)</li>
+  <li>Applied as middleware on sensitive routes: <code>auditLogger('CREATE_ALERT', 'Alert')</code></li>
+  <li>Stored in MongoDB <code>AuditLog</code> collection, exportable as XML</li>
+  <li>No controller code needs to be modified — logging is fully transparent</li>
+</ul>
+
+<h2>13. Campus Map Feature</h2>
+<h3>Admin pins (persistent):</h3>
+<ul>
+  <li>Stored in MongoDB <code>AdminPin</code> collection</li>
+  <li>Types: Exit 🚪, Hazard ⚠️, Assembly Area 🏁, First Aid 🏥</li>
+  <li>Visible to all authenticated users in real-time via WebSocket</li>
+</ul>
+<h3>User location pins (session-based):</h3>
+<ul>
+  <li>Stored in <code>LocationPin</code> collection (upserted — one pin per user)</li>
+  <li>User clicks map → coordinates sent via WebSocket <code>LOCATION_SHARE</code></li>
+  <li>Server saves to DB and broadcasts to all admin clients</li>
+  <li>Admin can send <code>GUIDE_USER</code> message to a specific user's WebSocket connection</li>
+</ul>
+
+<h2>14. PowerShell Automation Scripts</h2>
+<p>All scripts run from the <strong>Automation Center</strong> UI via <code>POST /api/system/scripts/:id/run</code>.</p>
+<table>
+  <tr><th>Script</th><th>What it does</th></tr>
+  <tr><td><code>db-backup.ps1</code></td><td>Exports all MongoDB collections to a timestamped ZIP</td></tr>
+  <tr><td><code>db-restore.ps1</code></td><td>Restores from latest or specific backup ZIP</td></tr>
+  <tr><td><code>xml-backup.ps1</code></td><td>ZIPs all generated XML files</td></tr>
+  <tr><td><code>xml-transform.ps1</code></td><td>Runs XSLT transformation on XML files</td></tr>
+  <tr><td><code>health-check.ps1</code></td><td>Checks Node.js, MongoDB, disk, memory status</td></tr>
+  <tr><td><code>log-cleanup.ps1</code></td><td>Deletes log files older than 30 days</td></tr>
+  <tr><td><code>queue-consumer.ps1</code></td><td>Starts a Kafka consumer process</td></tr>
+  <tr><td><code>report-gen.ps1</code></td><td>Generates analytics reports</td></tr>
+  <tr><td><code>notify-process.ps1</code></td><td>Processes and dispatches pending notifications</td></tr>
+</table>
+
+<h2>15. Docker &amp; Containerization</h2>
+<p><strong>File:</strong> <code>docker-compose.yml</code> — four services in one network (<code>ravensync-net</code>):</p>
+<table>
+  <tr><th>Container</th><th>Image</th><th>Port</th><th>Volume</th></tr>
+  <tr><td><code>ravensync-mongo</code></td><td>mongo:7.0</td><td>27017</td><td>mongo_data</td></tr>
+  <tr><td><code>ravensync-kafka</code></td><td>apache/kafka:3.7.0</td><td>9092</td><td>kafka_data</td></tr>
+  <tr><td><code>ravensync-kafka-ui</code></td><td>provectuslabs/kafka-ui</td><td>8080</td><td>—</td></tr>
+  <tr><td><code>ravensync-rabbitmq</code></td><td>rabbitmq:3.13-management</td><td>5672, 15672</td><td>rabbitmq_data</td></tr>
+</table>
+<ul>
+  <li>Kafka runs in <strong>KRaft mode</strong> — <code>KAFKA_PROCESS_ROLES: broker,controller</code> (no ZooKeeper needed)</li>
+  <li><code>kafka-ui</code> depends on Kafka being healthy before starting (<code>condition: service_healthy</code>)</li>
+  <li>RabbitMQ management UI at <code>http://localhost:15672</code> (login: <code>guest</code> / <code>guest</code>) — shows queues, message rates, consumers live</li>
+  <li><code>docker compose down -v</code> wipes all volumes for a clean slate</li>
+</ul>
+
+<h2>16. PWA (Progressive Web App)</h2>
+<p><strong>Files:</strong> <code>frontend/public/sw.js</code>, <code>frontend/public/manifest.json</code></p>
+<ul>
+  <li><strong>Service Worker</strong> caches static assets — app loads even when offline</li>
+  <li><strong>Web Manifest</strong> enables "Add to Home Screen" on mobile/desktop</li>
+  <li><strong>Install prompt</strong> intercepted with <code>beforeinstallprompt</code> event, shown as a custom banner</li>
+  <li>Critical for emergency use — users can access the app even with poor connectivity</li>
+</ul>
+
+<h2>17. Cron Jobs (Scheduled Tasks)</h2>
+<p><strong>File:</strong> <code>backend/server.js</code> using <code>node-cron</code></p>
+<table>
+  <tr><th>Schedule</th><th>Task</th></tr>
+  <tr><td>Every 6 hours</td><td>XML backup check</td></tr>
+  <tr><td>Daily at 2:00 AM</td><td>Log cleanup</td></tr>
+</table>
+
+<h2>18. Production Deployment</h2>
+<table>
+  <tr><th>Service</th><th>Role</th></tr>
+  <tr><td>Render</td><td>Hosts Node.js backend + serves static frontend</td></tr>
+  <tr><td>MongoDB Atlas</td><td>Cloud database (M0 free tier, 512MB)</td></tr>
+  <tr><td>RedPanda Cloud</td><td>Kafka-compatible broker (serverless, 10GB/month free)</td></tr>
+</table>
+<h3>Key environment variables:</h3>
+<ul>
+  <li><code>MONGODB_URI</code> — Atlas connection string</li>
+  <li><code>JWT_SECRET</code> — random secret for signing tokens</li>
+  <li><code>KAFKA_BROKERS</code> — RedPanda broker address</li>
+  <li><code>KAFKA_SASL_USERNAME</code> / <code>KAFKA_SASL_PASSWORD</code> — triggers SSL + SASL auth automatically</li>
+  <li><code>FRONTEND_URL</code> — used for CORS origin and QR code generation</li>
+</ul>
+
+<h2>19. Likely Instructor Questions &amp; Answers</h2>
+
+<div class="qa-block">
+  <div class="q">Q: Why did you use MongoDB if it is not part of the required topics?</div>
+  <div class="a">MongoDB is background infrastructure for authentication — JWT login requires a place to store users. Without login, there is no one to send alerts to or trigger XML exports. It is not a feature we are defending, it is just the plumbing that holds the system together.</div>
+</div>
+
+<div class="qa-block">
+  <div class="q">Q: Why not just use XML as the database instead of MongoDB?</div>
+  <div class="a">RavenSync is a real-time platform with 50+ users connecting simultaneously during emergencies. Concurrent writes to the same XML file cause file corruption — two users logging in at the same time would overwrite each other’s data. MongoDB handles concurrent access safely with atomic operations. XML files also have no indexing, so querying 1000 alerts by severity requires reading the entire file every time. File corruption during an actual emergency is unacceptable.</div>
+</div>
+
+<div class="qa-block">
+  <div class="q">Q: But NutriNest uses XML as a database — why can’t RavenSync do the same?</div>
+  <div class="a">NutriNest is a personal finance tracker — one user at a time, small data, minimal concurrent access. RavenSync is a multi-user real-time emergency platform. The use case determines the storage choice. Using XML files for RavenSync would risk file corruption exactly when the system is needed most — during an actual emergency.</div>
+</div>
+
+<div class="qa-block">
+  <div class="q">Q: So XML is not used for data storage at all in RavenSync?</div>
+  <div class="a">XML is used as the data exchange and reporting format — all alerts, users, audit logs, and reports are exported, parsed (DOM + SAX), and transformed (XSLT) as XML. MongoDB is just the write-safe storage layer behind it.</div>
+</div>
+
+<div class="qa-block">
+  <div class="q">Q: Why use WebSocket instead of REST polling?</div>
+  <div class="a">REST polling wastes bandwidth — the client repeatedly asks "anything new?" even when nothing changed. WebSocket keeps one persistent TCP connection open; the server pushes data only when an event occurs. For emergencies, that latency difference can matter.</div>
+</div>
+
+<div class="qa-block">
+  <div class="q">Q: What is the difference between DOM and SAX parsing?</div>
+  <div class="a">DOM loads the entire XML document into memory as a tree — easy to navigate but memory-heavy. SAX is event-driven and processes the document sequentially, firing events for each tag — memory-efficient for large files but you can't go back to a previous element.</div>
+</div>
+
+<div class="qa-block">
+  <div class="q">Q: Why does the password field have <code>select: false</code> in the schema?</div>
+  <div class="a">It prevents the password hash from being included in any query result by default. You must explicitly add <code>.select('+password')</code> when you actually need it (like during login). This prevents accidental password exposure in API responses.</div>
+</div>
+
+<div class="qa-block">
+  <div class="q">Q: What happens if Kafka goes down?</div>
+  <div class="a">The <code>messagingService</code> catches the connection error and falls back to an in-memory <code>offlineQueue</code> array. Messages are stored locally and flushed to Kafka automatically when the connection is restored via <code>_scheduleReconnect()</code>, which retries every 10 seconds.</div>
+</div>
+
+<div class="qa-block">
+  <div class="q">Q: What is RabbitMQ used for and how is it different from Kafka?</div>
+  <div class="a">RabbitMQ handles point-to-point task dispatch — audit log writes (async, non-blocking), announcement notifications, and guide-user delivery. Kafka is a log/stream where many consumers read the same message simultaneously (fan-out). RabbitMQ is a post office — one message, one worker, then deleted. Kafka is a logbook — messages persist and are replayable. They solve different problems so we use both intentionally.</div>
+</div>
+
+<div class="qa-block">
+  <div class="q">Q: What happens if RabbitMQ goes down?</div>
+  <div class="a">The <code>rabbitMQService</code> catches the error and falls back gracefully — audit logs write synchronously to MongoDB directly, and guide-user messages fall back to direct WebSocket delivery. <code>_scheduleReconnect()</code> retries every 10 seconds automatically.</div>
+</div>
+
+<div class="qa-block">
+  <div class="q">Q: How does the profanity filter handle leet-speak like "f4ck"?</div>
+  <div class="a">Each word is converted to a regex that substitutes common character replacements — <code>a</code> becomes <code>[a@4]</code>, <code>i</code> becomes <code>[i1!]</code>, etc. So "f4ck" still matches the pattern for the blocked word.</div>
+</div>
+
+<div class="qa-block">
+  <div class="q">Q: What is RBAC and how is it implemented here?</div>
+  <div class="a">Role-Based Access Control restricts what actions a user can perform based on their role. The <code>authorize(...roles)</code> middleware checks <code>req.user.role</code> against an allowed list. For example, <code>authorize('superadmin')</code> on the delete-user route means only superadmins can reach that controller.</div>
+</div>
+
+<div class="qa-block">
+  <div class="q">Q: Why is bcrypt used with 12 rounds specifically?</div>
+  <div class="a">bcrypt's cost factor (rounds) controls how slow the hashing is. 12 rounds is the current industry recommendation — slow enough that brute-forcing a stolen hash database is impractical, but fast enough that legitimate logins don't feel sluggish (typically ~250ms per hash).</div>
+</div>
+
+<div class="qa-block">
+  <div class="q">Q: What is the SPA router doing with <code>history.pushState</code>?</div>
+  <div class="a">It changes the URL in the browser's address bar without triggering a full page reload. The <code>render()</code> function then calls the matching page component to update the DOM. The <code>popstate</code> event listener handles the browser's back/forward buttons.</div>
+</div>
+
+<div class="qa-block">
+  <div class="q">Q: How does audit logging work without modifying every controller?</div>
+  <div class="a">The <code>auditLogger</code> middleware wraps <code>res.json()</code> — it intercepts the response after the controller finishes. Audit records are written automatically for any route the middleware is applied to, without touching the controller code at all.</div>
+</div>
+
+<div class="qa-block">
+  <div class="q">Q: Why does the seed script use <code>new mongoose.Types.ObjectId()</code> for <code>_id</code>?</div>
+  <div class="a">Mongoose expects <code>_id</code> to be a proper ObjectId type. If you insert a plain string, Mongoose's <code>save()</code> and <code>findById()</code> won't work correctly because they compare ObjectId types. The seed script ensures correct types from the start.</div>
+</div>
+
+<div class="qa-block">
+  <div class="q">Q: What is KRaft mode in Kafka?</div>
+  <div class="a">KRaft (Kafka Raft) is Kafka's built-in consensus protocol that replaces the older ZooKeeper dependency. In docker-compose, <code>KAFKA_PROCESS_ROLES: broker,controller</code> means the single Kafka container acts as both the message broker and the cluster controller — simpler setup for local development.</div>
+</div>
+
+<div class="qa-block">
+  <div class="q">Q: How does the channel locking feature work during emergencies?</div>
+  <div class="a">The <code>Channel</code> schema has a <code>lockedDuringEmergency</code> boolean. In <code>sendMessage</code>, if the channel is locked and the user is not an admin, the controller checks for any active alert in the database. If one exists, the message is rejected with a 403 error.</div>
+</div>
+
+<div class="qa-block">
+  <div class="q">Q: How does a new alert get broadcast to all connected users?</div>
+  <div class="a">When <code>createAlert</code> runs, it calls <code>broadcastToAll({ type: 'NEW_ALERT', data: alert })</code> from <code>websocketService</code>. This iterates over all connected WebSocket clients and sends the alert JSON to every open connection simultaneously. It also publishes to Kafka for durable delivery.</div>
+</div>
+
+<h2>20. Quick Reference — Key Numbers</h2>
+<div class="ref-box">
+<table>
+  <tr><th>Fact</th><th>Value</th></tr>
+  <tr><td>JWT expiry</td><td>7 days</td></tr>
+  <tr><td>bcrypt rounds</td><td>12</td></tr>
+  <tr><td>Rate limit (general)</td><td>100 req / 15 min</td></tr>
+  <tr><td>Rate limit (auth routes)</td><td>500 req / 15 min</td></tr>
+  <tr><td>Chat message rate limit</td><td>5 seconds between messages</td></tr>
+  <tr><td>Profanity warnings before mute</td><td>3</td></tr>
+  <tr><td>Mute durations</td><td>5 min → 10 min → 15 min</td></tr>
+  <tr><td>WebSocket heartbeat interval</td><td>30 seconds</td></tr>
+  <tr><td>Kafka reconnect delay</td><td>10 seconds</td></tr>
+  <tr><td>Max message length</td><td>500 characters</td></tr>
+  <tr><td>Avatar upload limit</td><td>2 MB</td></tr>
+  <tr><td>Request body limit</td><td>10 MB</td></tr>
+  <tr><td>Default server port</td><td>5000</td></tr>
+  <tr><td>Kafka UI port</td><td>8080</td></tr>
+  <tr><td>RabbitMQ AMQP port</td><td>5672</td></tr>
+  <tr><td>RabbitMQ Management UI port</td><td>15672</td></tr>
+  <tr><td>RabbitMQ queues count</td><td>3 (audit.logs, announcements, guide.user)</td></tr>
+  <tr><td>MongoDB port</td><td>27017</td></tr>
+  <tr><td>Default admin credentials</td><td>admin / admin123</td></tr>
+  <tr><td>Kafka topics count</td><td>4 (emergency.alerts, notifications, broadcasts, dead.letter)</td></tr>
+  <tr><td>Default channels after seed</td><td>4</td></tr>
+  <tr><td>Roles available</td><td>superadmin, admin, user</td></tr>
+</table>
+</div>
+
+<hr>
+<p style="text-align:center; color:#94a3b8; font-size:11px; margin-top:24px;">
+  🦅 RavenSync Emergency Communication Platform &nbsp;|&nbsp; Study Guide &nbsp;|&nbsp; Print: Ctrl+P → Save as PDF
+</p>
+
+</div>
+</body>
+</html>

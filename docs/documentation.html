@@ -53,7 +53,7 @@ tr:nth-child(even) td { background: #f8fafc; }
     <p><strong>Version:</strong> 1.0.0</p>
     <p><strong>Institution:</strong> DORSU — Davao Oriental State University</p>
     <p><strong>Year:</strong> 2025</p>
-    <p><strong>Stack:</strong> Node.js · MongoDB · Kafka · WebSocket · Vanilla JS</p>
+    <p><strong>Stack:</strong> Node.js · MongoDB · Kafka · RabbitMQ · WebSocket · Vanilla JS</p>
   </div>
 </div>
 
@@ -91,6 +91,7 @@ tr:nth-child(even) td { background: #f8fafc; }
   <div class="sub">Key Capabilities</div>
   <ul>
     <li>Real-time emergency alert broadcasting via WebSocket and Kafka message broker</li>
+    <li>Task queue via RabbitMQ — async audit logs, announcement dispatch, guide-user delivery</li>
     <li>Student safety status reporting — Safe, Need Help, or Damage Report</li>
     <li>Interactive campus map with admin evacuation pins and live user location sharing</li>
     <li>Structured XML data management with DOM/SAX parsing and XSLT transformation</li>
@@ -174,6 +175,23 @@ tr:nth-child(even) td { background: #f8fafc; }
   <div class="flow" style="margin-left:1rem"><div class="fa">↓</div></div>
   <div class="flow"><div class="fb o">Save to MongoDB (LocationPin)</div><div class="fa">+</div><div class="fb">broadcastToAll()</div><div class="fa">→</div><div class="fb r">Admin Map Pin Updates Live</div></div>
 
+  <div class="sub">2.3b RabbitMQ Task Queue Flow</div>
+  <div class="flow"><div class="fb r">Any Admin Action</div><div class="fa">→</div><div class="fb">auditLogger middleware</div><div class="fa">→</div><div class="fb o">publish(audit.logs)</div><div class="fa">→</div><div class="fb g">Worker writes to MongoDB</div></div>
+  <div class="flow"><div class="fb r">Admin Guides User</div><div class="fa">→</div><div class="fb o">publish(guide.user)</div><div class="fa">→</div><div class="fb g">Worker → sendToUser() WebSocket</div></div>
+  <div class="flow"><div class="fb r">New Announcement</div><div class="fa">→</div><div class="fb o">publish(announcements)</div><div class="fa">→</div><div class="fb g">Worker dispatches notification</div></div>
+
+  <div class="sub">2.5 Why MongoDB Instead of XML as Database</div>
+  <p>XML is the <strong>data exchange and reporting format</strong> in RavenSync — not the primary database. MongoDB was chosen because RavenSync is a multi-user real-time platform where 50+ users connect simultaneously during emergencies.</p>
+  <table>
+    <tr><th>Problem with XML as Database</th><th>Why It Matters in RavenSync</th></tr>
+    <tr><td>No concurrent write protection</td><td>50+ users connecting simultaneously would corrupt the file — two users logging in at the same time overwrite each other's data</td></tr>
+    <tr><td>No atomic operations</td><td>A server crash mid-write leaves the XML file in a broken, unreadable state</td></tr>
+    <tr><td>Full file read on every query</td><td>Reading all 1000 alerts just to find one by severity requires loading the entire file every time</td></tr>
+    <tr><td>No indexing</td><td>Cannot efficiently filter by status, severity, or date without scanning everything</td></tr>
+    <tr><td>No relationships</td><td>Manually resolving user → alert → channel across multiple XML files is error-prone</td></tr>
+  </table>
+  <div class="info"><strong>Note:</strong> XML is still central to RavenSync — all emergency data is exported, parsed (DOM + SAX), and transformed (XSLT) as XML. MongoDB is the write-safe storage layer behind it. NutriNest can use XML as a database because it is a single-user personal finance tracker with minimal concurrent access — a completely different use case.</div>
+
   <div class="sub">2.4 Technology Stack</div>
   <table>
     <tr><th>Layer</th><th>Technology</th><th>Purpose</th></tr>
@@ -182,7 +200,8 @@ tr:nth-child(even) td { background: #f8fafc; }
     <tr><td>Database</td><td>MongoDB + Mongoose</td><td>Document storage and ODM</td></tr>
     <tr><td>Auth</td><td>JWT + bcryptjs (12 rounds)</td><td>Stateless auth, password hashing</td></tr>
     <tr><td>Real-time</td><td>ws (WebSocket)</td><td>Bi-directional live communication</td></tr>
-    <tr><td>Messaging</td><td>Kafka / RedPanda (kafkajs)</td><td>Message broker with offline fallback</td></tr>
+    <tr><td>Broadcast Queue</td><td>Kafka / RedPanda (kafkajs)</td><td>Fan-out alert broadcasting, durable, replayable, offline fallback</td></tr>
+    <tr><td>Task Queue</td><td>RabbitMQ (amqplib)</td><td>Async audit logs, announcement dispatch, guaranteed guide-user delivery</td></tr>
     <tr><td>XML Build</td><td>xmlbuilder2</td><td>Structured XML document creation</td></tr>
     <tr><td>XML Parse</td><td>xml2js + sax</td><td>DOM and SAX parsing strategies</td></tr>
     <tr><td>XSLT</td><td>Custom JS engine + .xsl file</td><td>XML to HTML/JSON transformation</td></tr>
@@ -193,7 +212,7 @@ tr:nth-child(even) td { background: #f8fafc; }
     <tr><td>Charts</td><td>Chart.js</td><td>Analytics visualizations</td></tr>
     <tr><td>PWA</td><td>Service Worker + Web Manifest</td><td>Offline support, installable</td></tr>
     <tr><td>Automation</td><td>PowerShell + node-cron</td><td>Backup, cleanup, health scripts</td></tr>
-    <tr><td>Containers</td><td>Docker + docker-compose</td><td>MongoDB and Kafka containers</td></tr>
+    <tr><td>Containers</td><td>Docker + docker-compose</td><td>MongoDB, Kafka, Kafka UI, and RabbitMQ containers</td></tr>
     <tr><td>Logging</td><td>Winston</td><td>Structured application logging</td></tr>
   </table>
 </div>
@@ -206,17 +225,35 @@ tr:nth-child(even) td { background: #f8fafc; }
   <div class="sec-title">3. Feature Descriptions</div>
 
   <div class="sub">3.1 Messaging System</div>
-  <p>RavenSync uses a dual-layer messaging architecture combining <strong>WebSocket</strong> for real-time delivery and <strong>Kafka</strong> as a reliable message broker with offline fallback.</p>
+  <p>RavenSync uses a tri-layer messaging architecture: <strong>WebSocket</strong> for real-time delivery, <strong>Kafka</strong> as a broadcast message broker, and <strong>RabbitMQ</strong> as a task queue for point-to-point delivery.</p>
   <table>
     <tr><th>Component</th><th>Technology</th><th>Role</th></tr>
     <tr><td>Real-time delivery</td><td>WebSocket (ws)</td><td>Instant push to all connected clients</td></tr>
-    <tr><td>Message broker</td><td>Kafka / RedPanda (kafkajs)</td><td>Durable, ordered message queuing</td></tr>
-    <tr><td>Offline fallback</td><td>In-memory array queue</td><td>Stores messages when Kafka is unavailable</td></tr>
+    <tr><td>Broadcast queue</td><td>Kafka / RedPanda (kafkajs)</td><td>Fan-out alert broadcasting, durable, replayable</td></tr>
+    <tr><td>Task queue</td><td>RabbitMQ (amqplib)</td><td>Async audit logs, announcement dispatch, guide-user delivery</td></tr>
+    <tr><td>Offline fallback</td><td>In-memory array queue</td><td>Stores Kafka messages when broker is unavailable</td></tr>
     <tr><td>Channel messaging</td><td>WebSocket subscriptions</td><td>Per-channel message routing</td></tr>
     <tr><td>Profanity filter</td><td>Custom word list + regex</td><td>Client and server-side censoring</td></tr>
   </table>
   <p><strong>Kafka Topics:</strong> emergency.alerts · notifications · broadcasts · dead.letter</p>
-  <p><strong>Offline Queue:</strong> When Kafka is unavailable, messages are stored in-memory and automatically flushed when Kafka reconnects. The system retries connection every 10 seconds.</p>
+  <p><strong>Kafka Offline Queue:</strong> When Kafka is unavailable, messages are stored in-memory and automatically flushed when Kafka reconnects. Retries every 10 seconds.</p>
+
+  <div class="sub">3.1b RabbitMQ — Task Queue</div>
+  <p><strong>File:</strong> backend/services/rabbitMQService.js — Docker container at localhost:5672, management UI at localhost:15672 (guest/guest).</p>
+  <table>
+    <tr><th>Queue</th><th>Purpose</th><th>Why RabbitMQ (not Kafka)</th></tr>
+    <tr><td>audit.logs</td><td>Async audit log writes to MongoDB</td><td>Non-blocking — response goes out immediately, worker writes the log in background</td></tr>
+    <tr><td>announcements</td><td>Notification dispatch on announcement create</td><td>Guaranteed once-delivery — only one worker processes each notification</td></tr>
+    <tr><td>guide.user</td><td>Admin-to-user directional guidance delivery</td><td>Point-to-point routing to one specific user, not a broadcast</td></tr>
+  </table>
+  <table>
+    <tr><th>Scenario</th><th>Kafka</th><th>RabbitMQ</th></tr>
+    <tr><td>New alert → broadcast to ALL users</td><td>✅ fan-out</td><td>❌ duplicates</td></tr>
+    <tr><td>Audit log → write to DB async</td><td>❌ overkill</td><td>✅ task queue</td></tr>
+    <tr><td>Announcement → dispatch notification</td><td>❌</td><td>✅ once-delivery</td></tr>
+    <tr><td>Guide specific user</td><td>❌</td><td>✅ point-to-point</td></tr>
+    <tr><td>Replay past messages</td><td>✅</td><td>❌ deleted after consume</td></tr>
+  </table>
   <table>
     <tr><th>WebSocket Event</th><th>Direction</th><th>Description</th></tr>
     <tr><td>NEW_ALERT</td><td>Server → Client</td><td>Emergency alert broadcast</td></tr>
@@ -305,6 +342,12 @@ tr:nth-child(even) td { background: #f8fafc; }
   <p><strong>Kafka Messaging with Offline Fallback</strong></p>
   <p>The messagingService.js connects to Kafka on startup. If Kafka is unavailable, all publish calls push to an in-memory offlineQueue array instead. A reconnect timer fires every 10 seconds. When Kafka reconnects, _flushOfflineQueue() drains the array by sending all pending messages. This ensures zero message loss even during broker downtime.</p>
 
+  <p><strong>RabbitMQ Task Queue</strong></p>
+  <p>The rabbitMQService.js connects to RabbitMQ on startup and declares three durable queues: audit.logs, announcements, and guide.user. In server.js, three workers are registered via consume() — one writes audit logs to MongoDB asynchronously, one logs announcement notifications, and one delivers guide-user messages via sendToUser(). If RabbitMQ is unavailable, audit logs write synchronously and guide-user falls back to direct WebSocket delivery. Auto-reconnects every 10 seconds.</p>
+
+  <p><strong>Audit Logging via RabbitMQ</strong></p>
+  <p>The auditLogger middleware wraps res.json() — it intercepts the response after the controller finishes. Instead of writing directly to MongoDB (which blocks the response), it publishes the audit entry to the audit.logs RabbitMQ queue. A background worker consumes the queue and writes to MongoDB asynchronously. If RabbitMQ is unavailable, it falls back to direct AuditLog.create(). The API response goes out immediately without waiting for the DB write.</p>
+
   <p><strong>XML Generation</strong></p>
   <p>xmlService.js uses xmlbuilder2's fluent API to construct XML documents programmatically. Each generator function (generateAlertsXML, generateUsersXML, generateLogsXML, generateReportXML) builds a document with a namespace declaration, a Summary section, and a data section. Documents are saved to backend/xml/ and also returned via API for live preview.</p>
 
@@ -337,9 +380,18 @@ tr:nth-child(even) td { background: #f8fafc; }
   </ul>
 
   <div class="sub">4.2 Challenges Encountered and Solutions</div>
+  <!-- New challenges added below existing ones -->
 
   <table>
     <tr><th>Challenge</th><th>Solution</th></tr>
+    <tr>
+      <td>WebSocket status always showed "Connecting..." even after connected</td>
+      <td>The sidebar is rendered as a static HTML string — getWsStatus() was called at render time before the connection was established. Fixed by adding stable DOM IDs (ws-status-dot, ws-status-text) and patching them dynamically in initSidebar() when the connected and disconnected events fire</td>
+    </tr>
+    <tr>
+      <td>Audit log writes blocking API response time</td>
+      <td>Moved audit log writes to RabbitMQ audit.logs queue — response goes out immediately, background worker writes to MongoDB asynchronously. Falls back to synchronous write if RabbitMQ is unavailable</td>
+    </tr>
     <tr>
       <td>Kafka container keeps stopping in Docker</td>
       <td>Added restart:always policy, changed ADVERTISED_LISTENERS from localhost to host.docker.internal (Windows Docker), capped heap with KAFKA_HEAP_OPTS: -Xmx512m -Xms256m to prevent OOM kills</td>
@@ -397,6 +449,15 @@ tr:nth-child(even) td { background: #f8fafc; }
     <tr><td>Analytics</td><td>/analytics</td><td>Admin+</td><td>Charts, trends, XML report generation</td></tr>
     <tr><td>User Management</td><td>/users</td><td>Admin+</td><td>User list, activate/deactivate, create user, word filter manager</td></tr>
     <tr><td>Settings</td><td>/settings</td><td>All</td><td>Profile update, avatar upload, password change</td></tr>
+  </table>
+
+  <div class="sub">5.1b Docker Services</div>
+  <table>
+    <tr><th>Container</th><th>Image</th><th>Port</th><th>UI</th></tr>
+    <tr><td>ravensync-mongo</td><td>mongo:7.0</td><td>27017</td><td>—</td></tr>
+    <tr><td>ravensync-kafka</td><td>apache/kafka:3.7.0</td><td>9092</td><td>—</td></tr>
+    <tr><td>ravensync-kafka-ui</td><td>provectuslabs/kafka-ui</td><td>8080</td><td>http://localhost:8080</td></tr>
+    <tr><td>ravensync-rabbitmq</td><td>rabbitmq:3.13-management</td><td>5672, 15672</td><td>http://localhost:15672 (guest/guest)</td></tr>
   </table>
 
   <div class="sub">5.2 XML File Samples</div>
@@ -512,7 +573,7 @@ tr:nth-child(even) td { background: #f8fafc; }
   <div style="margin-top:3rem; text-align:center; color:#64748b; font-size:0.8rem; border-top:1px solid #e2e8f0; padding-top:1.5rem;">
     <p>🦅 RavenSync — Enterprise Emergency Communication Platform</p>
     <p>System Documentation v1.0 · DORSU · 2025 · Confidential</p>
-    <p>Built with Node.js · MongoDB · Kafka · WebSocket · Vanilla JS</p>
+    <p>Built with Node.js · MongoDB · Kafka · RabbitMQ · WebSocket · Vanilla JS</p>
   </div>
 </div>
 

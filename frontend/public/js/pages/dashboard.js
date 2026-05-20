@@ -106,27 +106,22 @@ function renderAdminDashboard(app) {
 }
 
 async function loadAdminDashboard() {
-  try {
-    const [statsRes, alertsRes, systemRes] = await Promise.all([
-      api.get('/admin/dashboard').catch(() => null),
-      api.get('/alerts', { limit: 5, status: 'active' }).catch(() => null),
-      api.get('/system/system-health').catch(() => null),
-    ]);
+  const [statsRes, alertsRes, systemRes] = await Promise.all([
+    api.get('/admin/dashboard').catch(() => null),
+    api.get('/alerts', { limit: 5, status: 'active' }).catch(() => null),
+    api.get('/system/system-health').catch(() => null),
+  ]);
 
-    renderAdminStatCards(statsRes?.data);
-    renderAlertFeed(alertsRes?.data);
-    renderSystemStatus(systemRes?.data);
-    renderAdminCharts(statsRes?.data);
+  renderAdminStatCards(statsRes?.data);
+  renderAlertFeed(alertsRes?.data);
+  renderSystemStatus(systemRes?.data);
+  renderAdminCharts(statsRes?.data);
 
-    // Load reports for the most recent active alert
-    if (alertsRes?.data?.length) {
-      const latestAlert = alertsRes.data[0];
-      loadStudentResponses(latestAlert._id);
-    } else {
-      document.getElementById('response-list').innerHTML = `<p class="text-slate-500 text-sm text-center py-4">No active alerts</p>`;
-    }
-  } catch (e) {
-    showToast('Failed to load dashboard', 'error');
+  if (alertsRes?.data?.length) {
+    loadStudentResponses(alertsRes.data[0]._id);
+  } else {
+    const el = document.getElementById('response-list');
+    if (el) el.innerHTML = `<p class="text-slate-500 text-sm text-center py-4">No active alerts</p>`;
   }
 }
 

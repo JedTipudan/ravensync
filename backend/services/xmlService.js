@@ -224,21 +224,47 @@ function generateHTMLReport(obj) {
     .map(k => `<th>${k}</th>`).join('');
 
   const summaryCards = Object.entries(summary)
-    .map(([k, v]) => `<div class="stat-card"><div class="stat-value">${v}</div><div class="stat-label">${k}</div></div>`)
+    .map(([k, v]) => {
+      const display = (k.toLowerCase().includes('at') || k.toLowerCase().includes('date')) && typeof v === 'string' && v.includes('T')
+        ? new Date(v).toLocaleString()
+        : v;
+      return `<div class="stat-card"><div class="stat-value">${display}</div><div class="stat-label">${k}</div></div>`;
+    })
     .join('');
 
   return `
-    <div class="header">
-      <div class="logo">🦅 RavenSync</div>
-      <h1>Data Report</h1>
-      <p>Generated: ${new Date().toLocaleString()} | Records: ${items.length}</p>
+    <style>
+      .rs-report * { box-sizing: border-box; margin: 0; padding: 0; }
+      .rs-report { font-family: 'Segoe UI', sans-serif; background: #ffffff; color: #1e293b; padding: 1.5rem; }
+      .rs-report .header { background: linear-gradient(135deg, #6366f1, #8b5cf6); padding: 1.5rem; border-radius: 12px; margin-bottom: 1.5rem; color: white; }
+      .rs-report .header .logo { font-size: 1.3rem; margin-bottom: 0.25rem; }
+      .rs-report .header h1 { font-size: 1.5rem; font-weight: 700; }
+      .rs-report .header p { font-size: 0.8rem; opacity: 0.85; margin-top: 0.25rem; }
+      .rs-report .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+      .rs-report .stat-card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 1rem; text-align: center; }
+      .rs-report .stat-value { font-size: 1.6rem; font-weight: 700; color: #6366f1; word-break: break-all; overflow-wrap: anywhere; line-height: 1.3; }
+      .rs-report .stat-label { font-size: 0.75rem; color: #64748b; margin-top: 0.2rem; }
+      .rs-report .section { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.25rem; margin-bottom: 1.25rem; }
+      .rs-report .section h2 { font-size: 1rem; font-weight: 600; color: #4f46e5; margin-bottom: 0.75rem; padding-bottom: 0.5rem; border-bottom: 1px solid #e2e8f0; }
+      .rs-report table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+      .rs-report th { background: #ede9fe; color: #4f46e5; padding: 0.6rem 0.75rem; text-align: left; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.04em; }
+      .rs-report td { padding: 0.6rem 0.75rem; border-bottom: 1px solid #f1f5f9; color: #334155; }
+      .rs-report tr:hover td { background: #f8fafc; }
+      .rs-report .footer { text-align: center; color: #94a3b8; font-size: 0.75rem; margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid #e2e8f0; }
+    </style>
+    <div class="rs-report">
+      <div class="header">
+        <div class="logo">🦅 RavenSync</div>
+        <h1>Data Report</h1>
+        <p>Generated: ${new Date().toLocaleString()} | Records: ${items.length}</p>
+      </div>
+      <div class="stats-grid">${summaryCards}</div>
+      <div class="section">
+        <h2>📋 Records</h2>
+        <table><thead><tr>${headers}</tr></thead><tbody>${rows.join('')}</tbody></table>
+      </div>
+      <div class="footer"><p>RavenSync Emergency Communication Platform | XSLT-Transformed Report</p></div>
     </div>
-    <div class="stats-grid">${summaryCards}</div>
-    <div class="section">
-      <h2>📋 Records</h2>
-      <table><thead><tr>${headers}</tr></thead><tbody>${rows.join('')}</tbody></table>
-    </div>
-    <div class="footer"><p>RavenSync Emergency Communication Platform | XSLT-Transformed Report</p></div>
   `;
 }
 

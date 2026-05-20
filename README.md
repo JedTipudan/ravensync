@@ -9,8 +9,9 @@
 ### Prerequisites
 - Node.js 18+
 - MongoDB (local or Atlas)
-- Docker (optional — for Kafka + MongoDB containers)
+- Docker (optional — for Kafka + RabbitMQ + MongoDB containers)
 - Kafka or RedPanda (optional — falls back to offline queue automatically)
+- RabbitMQ (optional — falls back to synchronous processing automatically)
 
 ### Installation
 
@@ -50,8 +51,10 @@ Services started by Docker:
 | ravensync-mongo | mongo:7.0 | 27017 |
 | ravensync-kafka | apache/kafka:3.7.0 | 9092 |
 | ravensync-kafka-ui | provectuslabs/kafka-ui | 8080 |
+| ravensync-rabbitmq | rabbitmq:3.13-management | 5672, 15672 |
 
 > Kafka UI available at **http://localhost:8080** — monitor topics and messages.
+> RabbitMQ Management UI available at **http://localhost:15672** — monitor queues and consumers (login: `guest` / `guest`).
 
 ---
 
@@ -77,7 +80,7 @@ RavenSync/
 │   │   └── LocationPin.js  # User location pins
 │   ├── routes/             # Express Routes
 │   ├── middlewares/        # Auth, Error, Audit
-│   ├── services/           # WebSocket, Kafka, XML
+│   ├── services/           # WebSocket, Kafka, RabbitMQ, XML
 │   ├── config/             # DB, Logger
 │   ├── xml/                # Generated XML Files
 │   ├── xslt/               # XSLT Stylesheets
@@ -96,7 +99,7 @@ RavenSync/
 │       │   ├── utils/      # Helpers, Toast
 │       │   └── app.js      # SPA Router
 │       └── index.html      # Entry Point
-└── docker-compose.yml      # MongoDB + Kafka + Kafka UI
+└── docker-compose.yml      # MongoDB + Kafka + RabbitMQ + UIs
 ```
 
 ---
@@ -109,7 +112,8 @@ RavenSync/
 | Database | MongoDB + Mongoose |
 | Auth | JWT + bcrypt (12 rounds) |
 | Real-time | WebSocket (ws) |
-| Messaging | Kafka / RedPanda (kafkajs) + offline queue fallback |
+| Messaging (Broadcast) | Kafka / RedPanda (kafkajs) + offline queue fallback |
+| Messaging (Task Queue) | RabbitMQ (amqplib) + sync fallback |
 | XML | xml2js (DOM + SAX), xmlbuilder2 |
 | XSLT | Custom transformation engine |
 | Frontend | Vanilla JS (ES Modules), Tailwind CSS |
@@ -165,7 +169,7 @@ RavenSync/
 - `GET /api/xml/files/:filename` — Get XML file content
 
 ### System
-- `GET /api/system/queue-stats` — Kafka queue stats
+- `GET /api/system/queue-stats` — Kafka + RabbitMQ queue stats
 - `GET /api/system/system-health` — System health
 - `GET /api/system/scripts` — List automation scripts
 - `POST /api/system/scripts/:id/run` — Execute script (admin+)
@@ -221,6 +225,28 @@ RavenSync/
 - Accessible via **Manage Users** in the sidebar
 - Role options: `superadmin`, `admin` (Instructor), `user` (Student)
 - Word filter manager — block custom words from all channels
+
+---
+
+## 🐇 RabbitMQ — Task Queue
+
+RabbitMQ runs alongside Kafka and handles point-to-point task dispatch:
+
+| Queue | Purpose | Why RabbitMQ (not Kafka) |
+|-------|---------|-------------------------|
+| `audit.logs` | Async audit log writes to MongoDB | Non-blocking — response goes out immediately, worker writes the log |
+| `announcements` | Notification dispatch on announcement create | Guaranteed once-delivery per task |
+| `guide.user` | Admin-to-user directional guidance | Point-to-point routing to one specific user |
+
+**Kafka vs RabbitMQ in RavenSync:**
+| Scenario | Kafka | RabbitMQ |
+|----------|-------|----------|
+| New alert → broadcast to ALL users | ✅ | |
+| Audit log → write to DB async | | ✅ |
+| Announcement → dispatch notification | | ✅ |
+| Guide specific user → guaranteed delivery | | ✅ |
+
+Both run fully offline via Docker. RabbitMQ falls back to synchronous processing if unavailable — zero breaking changes.
 
 ---
 
@@ -299,6 +325,7 @@ powershell -File scripts/db-restore.ps1 -BackupFile ".\backups\db\db_backup_2025
 | `KAFKA_SASL_USERNAME` | your RedPanda username |
 | `KAFKA_SASL_PASSWORD` | your RedPanda password |
 | `FRONTEND_URL` | `https://your-app.onrender.com` |
+| `RABBITMQ_URL` | `amqp://localhost:5672` (local) or CloudAMQP URL (production) |
 
 ### RedPanda Cloud Setup
 RedPanda is a Kafka-API compatible broker — `kafkajs` connects to it with no code changes, just SASL credentials:
@@ -362,8 +389,19 @@ node scripts/seed.js
 ### MongoDB ObjectId Note
 Always use `node scripts/seed.js` to create users. Manual insertion must use `new mongoose.Types.ObjectId()` for `_id` — plain string IDs will break Mongoose's `save()` and `findById()`.
 
+### Why MongoDB Instead of XML as Database
+XML is used as the **data exchange and reporting format** in RavenSync — not as the primary database. MongoDB was chosen for storage because:
+- RavenSync is a **multi-user real-time platform** — during an emergency, 50+ users connect simultaneously
+- Concurrent writes to the same XML file cause **file corruption** — two users logging in at the same time would overwrite each other's data
+- MongoDB handles concurrent access safely with **atomic operations**
+- XML files have no indexing — querying 1000 alerts by severity/status requires reading the entire file every time
+- File corruption during an actual emergency is unacceptable
+
+XML is still central to RavenSync — all emergency data (alerts, users, audit logs, reports) is **exported, stored, and processed as XML** via DOM parsing, SAX parsing, and XSLT transformation.
+
 ### Offline Mode
 - Kafka/RedPanda is optional — if unavailable, messages queue locally and flush when connection is restored
+- RabbitMQ is optional — if unavailable, audit logs write synchronously and guide-user falls back to direct WebSocket
 - WebSocket reconnects automatically every 3 seconds on disconnect
 - PWA service worker caches static assets for offline viewing
 

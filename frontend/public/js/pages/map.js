@@ -406,7 +406,6 @@ function initMap(isAdmin, user) {
   const offAdminPins = on('ADMIN_PINS_UPDATE', (msg) => {
     pins = (msg.data || []).map(p => ({ _id: p._id, type: p.type, x: p.x, y: p.y, label: p.label }));
     renderPins();
-    if (!isAdmin) showToast('🗺️ Map updated by admin', 'info');
   });
 
   // Admin: receive live location updates

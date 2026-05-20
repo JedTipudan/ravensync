@@ -56,6 +56,8 @@ export function initNotifications() {
       severity: a.severity,
       link: '/alerts',
     });
+    const user = getUser();
+    if (user?.role === 'user') showToast(`🚨 Emergency: ${a.title}`, 'error');
   });
 
   on('NEW_ANNOUNCEMENT', (data) => {
@@ -95,14 +97,60 @@ export function initNotifications() {
     const user = getUser();
     if (user?.role !== 'admin' && user?.role !== 'superadmin') return;
     const r = data.data;
-    if (!r || r.status !== 'need_help') return;
+    if (!r) return;
+    const cfg = {
+      safe:          { icon: '✅', type: 'help', title: `${r.user?.name || 'A user'} is safe`, body: r.message || 'Marked themselves as safe' },
+      need_help:     { icon: '🆘', type: 'help', title: `${r.user?.name || 'A user'} needs help!`, body: r.message || 'Tap to view details' },
+      damage_report: { icon: '⚠️', type: 'help', title: `${r.user?.name || 'A user'} reported damage`, body: r.message || 'Tap to view details' },
+    }[r.status];
+    if (!cfg) return;
+    push({ ...cfg, link: '/dashboard' });
+    if (r.status === 'need_help') showToast(`🆘 ${r.user?.name || 'A user'} needs help!`, 'error');
+    else if (r.status === 'safe') showToast(`✅ ${r.user?.name || 'A user'} is safe`, 'success');
+    else showToast(`⚠️ ${r.user?.name || 'A user'} reported damage`, 'warning');
+  });
+
+  on('ALERT_RESOLVED', (data) => {
+    const user = getUser();
+    const a = data.data;
+    if (user?.role === 'admin' || user?.role === 'superadmin') return; // admins resolve, don't need notif
     push({
-      type: 'help',
-      icon: '🆘',
-      title: `${r.user?.name || 'A student'} needs help!`,
-      body: r.message || 'Tap to view details',
-      link: '/dashboard',
+      type: 'alert',
+      icon: '✅',
+      title: 'Alert Resolved',
+      body: a?.title ? `"${a.title}" has been resolved` : 'An emergency alert has been resolved',
+      link: '/alerts',
     });
+    showToast('✅ Emergency alert has been resolved', 'success');
+  });
+
+  on('GUIDE_MESSAGE', (data) => {
+    const user = getUser();
+    if (user?.role === 'admin' || user?.role === 'superadmin') return;
+    const d = data.data;
+    if (!d) return;
+    push({
+      type: 'announcement',
+      icon: '🧭',
+      title: `Guidance from ${d.from || 'Admin'}`,
+      body: d.message,
+      link: '/map',
+    });
+  });
+
+  on('ADMIN_PINS_UPDATE', (data) => {
+    const user = getUser();
+    if (user?.role === 'admin' || user?.role === 'superadmin') return;
+    const pins = data.data;
+    if (!Array.isArray(pins)) return;
+    push({
+      type: 'announcement',
+      icon: '🗺️',
+      title: 'Campus Map Updated',
+      body: 'Admin has updated the emergency map. Tap to view.',
+      link: '/map',
+    });
+    showToast('🗺️ Map updated by admin', 'info');
   });
 }
 

@@ -50,9 +50,14 @@ const initWebSocket = (server) => {
           });
         }
         if (msg.type === 'GUIDE_USER' && userId) {
-          const target = clients.get(msg.targetUserId);
-          if (target && target.readyState === WebSocket.OPEN) {
-            target.send(JSON.stringify({ type: 'GUIDE_MESSAGE', data: { message: msg.message, from: msg.fromName } }));
+          const { publish, isConnected, QUEUES } = require('./rabbitMQService');
+          const guidePayload = { targetUserId: msg.targetUserId, message: msg.message, fromName: msg.fromName };
+          // Try RabbitMQ first for guaranteed delivery — fall back to direct WebSocket
+          if (!isConnected() || !publish(QUEUES.GUIDE_USER, guidePayload)) {
+            const target = clients.get(msg.targetUserId);
+            if (target && target.readyState === WebSocket.OPEN) {
+              target.send(JSON.stringify({ type: 'GUIDE_MESSAGE', data: { message: msg.message, from: msg.fromName } }));
+            }
           }
         }
       } catch (e) { /* ignore */ }

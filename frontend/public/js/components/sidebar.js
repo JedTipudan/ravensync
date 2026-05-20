@@ -1,5 +1,5 @@
 import { getUser, logout } from '../services/auth.js';
-import { getWsStatus } from '../services/websocket.js';
+import { getWsStatus, on } from '../services/websocket.js';
 import { toggleTheme, getTheme } from '../services/theme.js';
 
 export function renderSidebar(activePage) {
@@ -58,8 +58,8 @@ export function renderSidebar(activePage) {
 
       <div class="p-3 border-b border-white/5">
         <div class="flex items-center gap-2 px-2 py-1.5">
-          <div class="w-2 h-2 rounded-full ${getWsStatus() === 'open' ? 'bg-emerald-400' : 'bg-red-400'} animate-pulse"></div>
-          <span class="text-xs text-slate-400">${getWsStatus() === 'open' ? 'Live Connected' : 'Connecting...'}</span>
+          <div class="w-2 h-2 rounded-full bg-red-400 animate-pulse" id="ws-status-dot"></div>
+          <span class="text-xs text-slate-400" id="ws-status-text">Connecting...</span>
         </div>
       </div>
 
@@ -111,4 +111,21 @@ export function initSidebar() {
       btn.innerHTML = `<i class="fa-solid ${next === 'dark' ? 'fa-sun text-yellow-400' : 'fa-moon text-indigo-500'}"></i><span>${next === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>`;
     }
   };
+
+  // Update WS status indicator dynamically — sidebar is static HTML so we patch the DOM
+  const _setWsStatus = (connected) => {
+    const dot = document.getElementById('ws-status-dot');
+    const text = document.getElementById('ws-status-text');
+    if (!dot || !text) return;
+    dot.className = `w-2 h-2 rounded-full ${connected ? 'bg-emerald-400' : 'bg-red-400'} animate-pulse`;
+    text.textContent = connected ? 'Live Connected' : 'Connecting...';
+  };
+
+  // Set immediately based on current state
+  _setWsStatus(getWsStatus() === 'open');
+
+  // Update on connect / disconnect events
+  on('connected', () => _setWsStatus(true));
+  on('CONNECTED', () => _setWsStatus(true));
+  on('disconnected', () => _setWsStatus(false));
 }

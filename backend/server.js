@@ -15,6 +15,8 @@ const logger = require('./config/logger');
 const errorHandler = require('./middlewares/errorHandler');
 const { initWebSocket } = require('./services/websocketService');
 const { connectKafka } = require('./services/messagingService');
+const { connectRabbitMQ, consume, QUEUES } = require('./services/rabbitMQService');
+const AuditLog = require('./models/AuditLog');
 const xmlService = require('./services/xmlService');
 const { loadCustomWords } = require('./utils/profanityFilter');
 const fs = require('fs');
@@ -30,6 +32,24 @@ initWebSocket(server);
 
 // Connect Kafka (non-blocking — falls back to offline queue if unavailable)
 connectKafka().catch(() => {});
+
+// Connect RabbitMQ and start workers (non-blocking — falls back gracefully)
+connectRabbitMQ().then((connected) => {
+  if (!connected) return;
+  // Worker: write audit logs asynchronously
+  consume(QUEUES.AUDIT_LOGS, async (entry) => {
+    await AuditLog.create(entry);
+  });
+  // Worker: log announcement notifications (extend here to send email/SMS)
+  consume(QUEUES.ANNOUNCEMENTS, async (payload) => {
+    logger.info(`[RABBITMQ] Announcement queued for delivery: ${payload.title}`);
+  });
+  // Worker: deliver guide-user messages via WebSocket
+  consume(QUEUES.GUIDE_USER, async (payload) => {
+    const { sendToUser } = require('./services/websocketService');
+    sendToUser(payload.targetUserId, { type: 'GUIDE_MESSAGE', data: { message: payload.message, from: payload.fromName } });
+  });
+}).catch(() => {});
 
 // Security middleware
 app.use(helmet({

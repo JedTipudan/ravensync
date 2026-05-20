@@ -1,5 +1,6 @@
 const Announcement = require('../models/Announcement');
 const { broadcastToAll } = require('../services/websocketService');
+const { publish, isConnected, QUEUES } = require('../services/rabbitMQService');
 
 exports.getAnnouncements = async (req, res, next) => {
   try {
@@ -24,6 +25,8 @@ exports.createAnnouncement = async (req, res, next) => {
     });
     await announcement.populate('author', 'name role');
     broadcastToAll({ type: 'NEW_ANNOUNCEMENT', data: announcement });
+    // Queue notification task — ensures offline users get notified on reconnect
+    if (isConnected()) publish(QUEUES.ANNOUNCEMENTS, { announcementId: announcement._id.toString(), title: announcement.title, category: announcement.category });
     res.status(201).json({ success: true, data: announcement });
   } catch (error) { next(error); }
 };

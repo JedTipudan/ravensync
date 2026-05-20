@@ -23,6 +23,7 @@ export function initWebSocket(token) {
 
   ws.onclose = () => {
     console.log('🔌 WebSocket disconnected, reconnecting...');
+    emit('disconnected', {});
     setTimeout(() => initWebSocket(token), 3000);
   };
 
