@@ -410,6 +410,7 @@ function initMap(isAdmin, user) {
 
   // Admin: receive live location updates
   let offLocationShare;
+  let offPinRemoved;
   if (isAdmin) {
     offLocationShare = on('LOCATION_SHARE', (msg) => {
       const d = msg.data;
@@ -419,6 +420,19 @@ function initMap(isAdmin, user) {
       renderPins();
       updateUserLocationList();
       showToast(`📍 ${d.name} shared their location`, 'success');
+    });
+
+    offPinRemoved = on('LOCATION_PIN_REMOVED', (msg) => {
+      const userId = msg.data?.userId;
+      if (!userId) return;
+      const i = userPins.findIndex(p => p.userId === userId);
+      if (i !== -1) {
+        const name = userPins[i].label;
+        userPins.splice(i, 1);
+        renderPins();
+        updateUserLocationList();
+        showToast(`✅ ${name} marked safe — removed from map`, 'success');
+      }
     });
   }
 
@@ -435,6 +449,7 @@ function initMap(isAdmin, user) {
   const cleanup = () => {
     offAdminPins?.();
     offLocationShare?.();
+    offPinRemoved?.();
     offGuideMsg?.();
     document.removeEventListener('spa:navigate', cleanup);
   };

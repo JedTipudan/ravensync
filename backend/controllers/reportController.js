@@ -1,4 +1,5 @@
 const Report = require('../models/Report');
+const LocationPin = require('../models/LocationPin');
 const { broadcastToAll } = require('../services/websocketService');
 
 exports.submitReport = async (req, res, next) => {
@@ -13,6 +14,13 @@ exports.submitReport = async (req, res, next) => {
     ).populate('user', 'name role organization department');
 
     broadcastToAll({ type: 'STUDENT_REPORT', data: report });
+
+    // If user marked safe — remove their location pin so admin list cleans up
+    if (status === 'safe') {
+      await LocationPin.findOneAndDelete({ userId: req.user._id });
+      broadcastToAll({ type: 'LOCATION_PIN_REMOVED', data: { userId: req.user._id.toString() } });
+    }
+
     res.json({ success: true, data: report });
   } catch (error) { next(error); }
 };
