@@ -54,6 +54,10 @@ export function renderChannels(app) {
           </div>
         </div>
         <div class="flex items-center gap-2">
+          ${isAdmin() ? `
+          <button onclick="openGlobalBroadcast()" class="btn btn-ghost text-sm border border-purple-500/40 text-purple-400 hover:bg-purple-500/10">
+            <i class="fa-solid fa-bullhorn"></i> <span class="hidden sm:inline">Broadcast</span>
+          </button>` : ''}
           <button onclick="openCreateChannel()" class="btn btn-primary text-sm">
             <i class="fa-solid fa-plus"></i> <span class="hidden sm:inline">New Channel</span>
           </button>
@@ -83,6 +87,22 @@ export function renderChannels(app) {
             </div>
           </div>
           <div id="message-input-area" class="p-3 border-t border-white/5 hidden"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Global Broadcast Modal -->
+    <div id="global-broadcast-modal" class="modal-overlay hidden">
+      <div class="modal p-5">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-lg font-bold">📢 Global Broadcast</h2>
+          <button onclick="document.getElementById('global-broadcast-modal').classList.add('hidden')" class="text-slate-400 hover:text-white text-xl">&times;</button>
+        </div>
+        <p class="text-sm text-slate-400 mb-4">This message will be sent to <strong class="text-white">all connected users</strong> as a pop-up notification instantly.</p>
+        <textarea id="global-broadcast-input" class="input resize-none h-28 text-sm" placeholder="Type your message to all users..."></textarea>
+        <div class="flex gap-3 mt-4">
+          <button onclick="sendGlobalBroadcast()" class="btn btn-primary flex-1"><i class="fa-solid fa-bullhorn"></i> Send to Everyone</button>
+          <button onclick="document.getElementById('global-broadcast-modal').classList.add('hidden')" class="btn btn-ghost">Cancel</button>
         </div>
       </div>
     </div>
@@ -234,6 +254,17 @@ export function renderChannels(app) {
 
   window.openCreateChannel = () => document.getElementById('create-channel-modal').classList.remove('hidden');
   window.closeChannelModal = () => document.getElementById('create-channel-modal').classList.add('hidden');
+  window.openGlobalBroadcast = () => document.getElementById('global-broadcast-modal').classList.remove('hidden');
+  window.sendGlobalBroadcast = async () => {
+    const msg = document.getElementById('global-broadcast-input')?.value?.trim();
+    if (!msg) { showToast('Please enter a message', 'warning'); return; }
+    try {
+      await api.post('/channels/global-broadcast', { message: msg });
+      document.getElementById('global-broadcast-modal').classList.add('hidden');
+      document.getElementById('global-broadcast-input').value = '';
+      showToast('📢 Broadcast sent to all users', 'success');
+    } catch (err) { showToast(err.message || 'Failed to send broadcast', 'error'); }
+  };
   window.selectChannel = selectChannel;
   window.sendMessage = sendMessage;
 

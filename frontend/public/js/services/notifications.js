@@ -56,8 +56,8 @@ export function initNotifications() {
       severity: a.severity,
       link: '/alerts',
     });
-    const user = getUser();
-    if (user?.role === 'user') showToast(`🚨 Emergency: ${a.title}`, 'error');
+    // Show prominent banner for ALL users (not just students)
+    showEmergencyBanner(a);
   });
 
   on('NEW_ANNOUNCEMENT', (data) => {
@@ -79,18 +79,39 @@ export function initNotifications() {
     const senderId = m.sender?._id || m.sender;
     if (senderId === user?._id) return; // don't notify own messages
 
-    // If it's an alert-type message from the emergency channel, show prominent toast
+    // Alert-type system message
     if (m.type === 'alert') {
       showToast(`🚨 ${m.content.split('\n')[0].replace(/\*\*/g, '')}`, 'error');
     }
 
+    // Admin/superadmin message — show prominent toast for users not in that channel
+    if (data.fromAdmin && m.type !== 'alert') {
+      showAdminMessageBanner(m);
+    }
+
     push({
       type: 'message',
-      icon: m.type === 'alert' ? '🚨' : '💬',
-      title: m.type === 'alert' ? 'Emergency Alert' : `New message from ${m.sender?.name || 'Someone'}`,
+      icon: m.type === 'alert' ? '🚨' : (data.fromAdmin ? '📣' : '💬'),
+      title: m.type === 'alert' ? 'Emergency Alert' : (data.fromAdmin ? `📣 ${m.sender?.name || 'Admin'} (Instructor)` : `New message from ${m.sender?.name || 'Someone'}`),
       body: m.content.split('\n')[0].replace(/\*\*/g, ''),
       link: '/channels',
     });
+  });
+
+  on('GLOBAL_BROADCAST', (data) => {
+    const d = data.data;
+    if (!d) return;
+    const user = getUser();
+    // Don't notify the sender
+    if (d.from === user?.name) return;
+    push({
+      type: 'announcement',
+      icon: '📣',
+      title: `Global Message from ${d.from}`,
+      body: d.message,
+      link: '/channels',
+    });
+    showGlobalBroadcastBanner(d);
   });
 
   on('STUDENT_REPORT', (data) => {
@@ -174,4 +195,69 @@ export function clearAll() {
 export function onNotifChange(fn) {
   listeners.push(fn);
   return () => { const i = listeners.indexOf(fn); if (i > -1) listeners.splice(i, 1); };
+}
+
+function showEmergencyBanner(alert) {
+  document.getElementById('rs-emergency-banner')?.remove();
+  const el = document.createElement('div');
+  el.id = 'rs-emergency-banner';
+  el.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;animation:slideDown .3s ease';
+  const colors = { critical: '#dc2626', high: '#ea580c', medium: '#2563eb', low: '#16a34a' };
+  const bg = colors[alert.severity] || '#dc2626';
+  el.innerHTML = `
+    <div style="background:${bg};color:#fff;padding:1rem 1.5rem;display:flex;align-items:center;gap:1rem;box-shadow:0 4px 24px rgba(0,0,0,.5)">
+      <span style="font-size:2rem;flex-shrink:0">🚨</span>
+      <div style="flex:1;min-width:0">
+        <div style="font-weight:900;font-size:1rem">${alert.title}</div>
+        <div style="font-size:.85rem;opacity:.9;margin-top:.15rem">${alert.message}</div>
+        ${alert.instructions ? `<div style="font-size:.8rem;margin-top:.25rem;opacity:.85">📋 ${alert.instructions}</div>` : ''}
+      </div>
+      <button onclick="navigate('/alerts');document.getElementById('rs-emergency-banner')?.remove()"
+        style="background:rgba(255,255,255,.2);border:none;color:#fff;padding:.4rem .9rem;border-radius:8px;cursor:pointer;font-weight:700;flex-shrink:0">View</button>
+      <button onclick="document.getElementById('rs-emergency-banner')?.remove()"
+        style="background:none;border:none;color:rgba(255,255,255,.7);font-size:1.4rem;cursor:pointer;flex-shrink:0">&times;</button>
+    </div>
+  `;
+  document.body.prepend(el);
+  setTimeout(() => el?.remove(), 15000);
+}
+
+function showAdminMessageBanner(msg) {
+  const el = document.createElement('div');
+  el.style.cssText = 'position:fixed;bottom:5rem;right:1.5rem;z-index:9999;max-width:320px;animation:slideUp .3s ease';
+  el.innerHTML = `
+    <div style="background:#1e1e3a;border:1px solid #6366f1;border-radius:14px;padding:1rem 1.25rem;box-shadow:0 8px 32px rgba(0,0,0,.5);display:flex;gap:.75rem;align-items:flex-start">
+      <span style="font-size:1.5rem;flex-shrink:0">📣</span>
+      <div style="flex:1;min-width:0">
+        <div style="font-weight:700;font-size:.9rem;color:#a78bfa">${msg.sender?.name || 'Instructor'} <span style="font-size:.75rem;color:#6366f1;font-weight:400">(Instructor)</span></div>
+        <div style="font-size:.85rem;color:#cbd5e1;margin-top:.2rem;word-break:break-word">${msg.content.split('\n')[0]}</div>
+        <button onclick="navigate('/channels');this.closest('[style]').remove()"
+          style="margin-top:.5rem;background:#6366f1;border:none;color:#fff;padding:.3rem .8rem;border-radius:6px;cursor:pointer;font-size:.8rem">Open Channel</button>
+      </div>
+      <button onclick="this.closest('[style]').remove()"
+        style="background:none;border:none;color:#475569;font-size:1.2rem;cursor:pointer;flex-shrink:0">&times;</button>
+    </div>
+  `;
+  document.body.appendChild(el);
+  setTimeout(() => el?.remove(), 8000);
+}
+
+function showGlobalBroadcastBanner(d) {
+  document.getElementById('rs-global-banner')?.remove();
+  const el = document.createElement('div');
+  el.id = 'rs-global-banner';
+  el.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99998;animation:slideDown .3s ease';
+  el.innerHTML = `
+    <div style="background:linear-gradient(135deg,#7c3aed,#4f46e5);color:#fff;padding:.85rem 1.5rem;display:flex;align-items:center;gap:1rem;box-shadow:0 4px 24px rgba(0,0,0,.4)">
+      <span style="font-size:1.5rem;flex-shrink:0">📢</span>
+      <div style="flex:1;min-width:0">
+        <div style="font-weight:700;font-size:.9rem">${d.from} <span style="opacity:.7;font-weight:400;font-size:.8rem">(${d.role})</span></div>
+        <div style="font-size:.9rem;opacity:.95">${d.message}</div>
+      </div>
+      <button onclick="document.getElementById('rs-global-banner')?.remove()"
+        style="background:none;border:none;color:rgba(255,255,255,.7);font-size:1.4rem;cursor:pointer;flex-shrink:0">&times;</button>
+    </div>
+  `;
+  document.body.prepend(el);
+  setTimeout(() => el?.remove(), 12000);
 }

@@ -168,7 +168,9 @@ exports.sendMessage = async (req, res, next) => {
       $inc: { messageCount: 1 },
     });
 
-    broadcastToChannel(req.params.id, { type: 'NEW_MESSAGE', data: message });
+    // Tag admin/superadmin messages so clients can show prominent notification
+    const isAdminSender = req.user.role === 'admin' || req.user.role === 'superadmin';
+    broadcastToChannel(req.params.id, { type: 'NEW_MESSAGE', data: message, fromAdmin: isAdminSender });
 
     let warningInfo = null;
     if (hasProfanity && !isAdmin) {
@@ -247,6 +249,18 @@ exports.deleteChannel = async (req, res, next) => {
     if (req.user.role === 'user') return res.status(403).json({ success: false, message: 'Admins only' });
     const channel = await Channel.findByIdAndUpdate(req.params.id, { isActive: false }, { new: true });
     if (!channel) return res.status(404).json({ success: false, message: 'Channel not found' });
+    res.json({ success: true });
+  } catch (error) { next(error); }
+};
+
+exports.globalBroadcast = async (req, res, next) => {
+  try {
+    const { message } = req.body;
+    if (!message?.trim()) return res.status(400).json({ success: false, message: 'Message is required' });
+    broadcastToAll({
+      type: 'GLOBAL_BROADCAST',
+      data: { message: message.trim(), from: req.user.name, role: req.user.role, sentAt: new Date() },
+    });
     res.json({ success: true });
   } catch (error) { next(error); }
 };
