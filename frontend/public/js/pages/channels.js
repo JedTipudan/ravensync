@@ -55,12 +55,18 @@ export function renderChannels(app) {
         </div>
         <div class="flex items-center gap-2">
           ${isAdmin() ? `
+          <button id="pending-requests-btn" onclick="openChannelRequests()" class="btn btn-ghost text-sm border border-amber-500/40 text-amber-400 hover:bg-amber-500/10 hidden">
+            <i class="fa-solid fa-clock"></i> <span class="hidden sm:inline">Requests</span>
+          </button>
           <button onclick="openGlobalBroadcast()" class="btn btn-ghost text-sm border border-purple-500/40 text-purple-400 hover:bg-purple-500/10">
             <i class="fa-solid fa-bullhorn"></i> <span class="hidden sm:inline">Broadcast</span>
-          </button>` : ''}
+          </button>
           <button onclick="openCreateChannel()" class="btn btn-primary text-sm">
             <i class="fa-solid fa-plus"></i> <span class="hidden sm:inline">New Channel</span>
-          </button>
+          </button>` : `
+          <button onclick="openRequestChannel()" class="btn btn-primary text-sm">
+            <i class="fa-solid fa-plus"></i> <span class="hidden sm:inline">Request Channel</span>
+          </button>`}
         </div>
       </header>
 
@@ -87,6 +93,48 @@ export function renderChannels(app) {
             </div>
           </div>
           <div id="message-input-area" class="p-3 border-t border-white/5 hidden"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Request Channel Modal (users) -->
+    <div id="request-channel-modal" class="modal-overlay hidden">
+      <div class="modal p-5">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-lg font-bold">📋 Request New Channel</h2>
+          <button onclick="document.getElementById('request-channel-modal').classList.add('hidden')" class="text-slate-400 hover:text-white text-xl">&times;</button>
+        </div>
+        <p class="text-sm text-slate-400 mb-4">Your request will be sent to the Super Admin for approval.</p>
+        <form id="request-channel-form" class="space-y-3">
+          <div>
+            <label class="block text-sm font-medium text-slate-300 mb-1">Channel Name *</label>
+            <input type="text" id="req-channel-name" class="input" placeholder="e.g. Study Group A" required/>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-slate-300 mb-1">Description</label>
+            <input type="text" id="req-channel-desc" class="input" placeholder="What is this channel for?"/>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-slate-300 mb-1">Icon</label>
+            <input type="text" id="req-channel-icon" class="input" value="📡" placeholder="Emoji"/>
+          </div>
+          <div class="flex gap-3 pt-1">
+            <button type="submit" class="btn btn-primary flex-1">Send Request</button>
+            <button type="button" onclick="document.getElementById('request-channel-modal').classList.add('hidden')" class="btn btn-ghost">Cancel</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Pending Channel Requests Modal (superadmin) -->
+    <div id="channel-requests-modal" class="modal-overlay hidden">
+      <div class="modal p-5" style="max-width:520px">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-lg font-bold">📋 Pending Channel Requests</h2>
+          <button onclick="document.getElementById('channel-requests-modal').classList.add('hidden')" class="text-slate-400 hover:text-white text-xl">&times;</button>
+        </div>
+        <div id="channel-requests-list" class="space-y-3 max-h-96 overflow-y-auto">
+          <div class="text-center py-6"><div class="spinner mx-auto"></div></div>
         </div>
       </div>
     </div>
@@ -177,6 +225,7 @@ export function renderChannels(app) {
 
   initSidebar();
   loadChannels();
+  if (isAdmin()) loadChannelRequests();
 
   // Mobile: show channel list, hide chat
   window.showChannelList = () => {
@@ -265,6 +314,43 @@ export function renderChannels(app) {
       showToast('📢 Broadcast sent to all users', 'success');
     } catch (err) { showToast(err.message || 'Failed to send broadcast', 'error'); }
   };
+
+  window.openRequestChannel = () => document.getElementById('request-channel-modal').classList.remove('hidden');
+
+  window.openChannelRequests = async () => {
+    document.getElementById('channel-requests-modal').classList.remove('hidden');
+    await loadChannelRequests();
+  };
+
+  window.reviewChannelRequest = async (id, action) => {
+    const note = action === 'reject' ? (prompt('Reason for rejection (optional):') || '') : '';
+    try {
+      await api.patch(`/channels/requests/${id}/review`, { action, reviewNote: note });
+      showToast(action === 'approve' ? '✅ Channel approved and created' : '❌ Request rejected', action === 'approve' ? 'success' : 'error');
+      await loadChannelRequests();
+      loadChannels();
+    } catch (err) { showToast(err.message || 'Failed to review request', 'error'); }
+  };
+
+  document.getElementById('request-channel-form')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    try {
+      await api.post('/channels/requests', {
+        name: document.getElementById('req-channel-name').value,
+        description: document.getElementById('req-channel-desc').value,
+        icon: document.getElementById('req-channel-icon').value,
+      });
+      showToast('📋 Request sent! Waiting for Super Admin approval.', 'success');
+      document.getElementById('request-channel-modal').classList.add('hidden');
+      e.target.reset();
+    } catch (err) { showToast(err.message || 'Failed to send request', 'error'); }
+  });
+
+  // Superadmin: show pending requests badge on CHANNEL_REQUEST event
+  on('CHANNEL_REQUEST', () => {
+    const btn = document.getElementById('pending-requests-btn');
+    if (btn) btn.classList.remove('hidden');
+  });
   window.selectChannel = selectChannel;
   window.sendMessage = sendMessage;
 
@@ -303,6 +389,40 @@ export function renderChannels(app) {
       loadChannels();
     } catch (err) { showToast(err.message || 'Failed to update', 'error'); }
   });
+}
+
+async function loadChannelRequests() {
+  const list = document.getElementById('channel-requests-list');
+  if (!list) return;
+  try {
+    const res = await api.get('/channels/requests', { status: 'pending' });
+    const requests = res.data.filter(r => r.status === 'pending');
+    // Update badge visibility
+    const btn = document.getElementById('pending-requests-btn');
+    if (btn) btn.classList.toggle('hidden', requests.length === 0);
+    if (!requests.length) {
+      list.innerHTML = `<div class="text-center py-8 text-slate-500 text-sm">✅ No pending requests</div>`;
+      return;
+    }
+    list.innerHTML = requests.map(r => `
+      <div class="glass rounded-xl border border-white/8 p-4">
+        <div class="flex items-start gap-3">
+          <span class="text-2xl">${r.icon || '📡'}</span>
+          <div class="flex-1 min-w-0">
+            <div class="font-bold text-sm">${r.name}</div>
+            <div class="text-xs text-slate-400">${r.description || 'No description'}</div>
+            <div class="text-xs text-slate-500 mt-1">Requested by <span class="text-indigo-400">${r.requestedBy?.name}</span> · ${new Date(r.createdAt).toLocaleDateString()}</div>
+          </div>
+        </div>
+        <div class="flex gap-2 mt-3">
+          <button onclick="reviewChannelRequest('${r._id}', 'approve')" class="btn btn-primary text-xs flex-1 py-1.5">✅ Approve</button>
+          <button onclick="reviewChannelRequest('${r._id}', 'reject')" class="btn btn-ghost text-xs flex-1 py-1.5 border border-red-500/30 text-red-400 hover:bg-red-500/10">❌ Reject</button>
+        </div>
+      </div>
+    `).join('');
+  } catch (err) {
+    list.innerHTML = `<div class="text-center py-8 text-red-400 text-sm">Failed to load requests</div>`;
+  }
 }
 
 async function loadChannels() {

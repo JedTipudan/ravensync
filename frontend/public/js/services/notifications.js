@@ -131,6 +131,51 @@ export function initNotifications() {
     else showToast(`⚠️ ${r.user?.name || 'A user'} reported damage`, 'warning');
   });
 
+  on('CHANNEL_MESSAGE_NOTIFY', (data) => {
+    const d = data.data;
+    if (!d) return;
+    const user = getUser();
+    push({
+      type: 'message',
+      icon: d.channelIcon || '💬',
+      title: `${d.fromAdmin ? '📣 ' : ''}${d.senderName} in ${d.channelName}`,
+      body: d.preview,
+      link: '/channels',
+    });
+    if (d.fromAdmin) showAdminMessageBanner({ sender: { name: d.senderName }, content: d.preview, channelName: d.channelName });
+  });
+
+  on('CHANNEL_REQUEST', (data) => {
+    const user = getUser();
+    if (user?.role !== 'superadmin' && user?.role !== 'admin') return;
+    const r = data.data;
+    if (!r) return;
+    push({
+      type: 'announcement',
+      icon: '📋',
+      title: `Channel Request: "${r.name}"`,
+      body: `${r.requestedBy?.name} wants to create a channel`,
+      link: '/channels',
+    });
+    showToast(`📋 ${r.requestedBy?.name} requested a new channel: "${r.name}"`, 'info');
+  });
+
+  on('CHANNEL_REQUEST_REVIEWED', (data) => {
+    const user = getUser();
+    const d = data.data;
+    if (!d) return;
+    if (d.targetUserId !== user?._id) return;
+    const approved = d.status === 'approved';
+    push({
+      type: 'announcement',
+      icon: approved ? '✅' : '❌',
+      title: approved ? `Channel "${d.channelName}" Approved!` : `Channel "${d.channelName}" Rejected`,
+      body: d.reviewNote || (approved ? 'Your channel is now live.' : 'Your request was not approved.'),
+      link: '/channels',
+    });
+    showToast(approved ? `✅ Your channel "${d.channelName}" was approved!` : `❌ Channel request "${d.channelName}" was rejected`, approved ? 'success' : 'error');
+  });
+
   on('ALERT_RESOLVED', (data) => {
     const user = getUser();
     const a = data.data;

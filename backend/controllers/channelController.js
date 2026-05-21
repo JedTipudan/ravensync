@@ -70,6 +70,8 @@ exports.getChannels = async (req, res, next) => {
 exports.createChannel = async (req, res, next) => {
   try {
     const { type } = req.body;
+    if (req.user.role === 'user')
+      return res.status(403).json({ success: false, message: 'Students must request a channel. Use the Request Channel option.' });
     if ((type === 'emergency' || type === 'broadcast') && req.user.role === 'user')
       return res.status(403).json({ success: false, message: 'Only admins can create emergency or broadcast channels' });
     const locked = type === 'emergency' || type === 'broadcast';
@@ -171,6 +173,25 @@ exports.sendMessage = async (req, res, next) => {
     // Tag admin/superadmin messages so clients can show prominent notification
     const isAdminSender = req.user.role === 'admin' || req.user.role === 'superadmin';
     broadcastToChannel(req.params.id, { type: 'NEW_MESSAGE', data: message, fromAdmin: isAdminSender });
+
+    // Notify channel members who are NOT subscribed to this channel right now
+    const { sendToUser, getClients } = require('../services/websocketService');
+    const channelMembers = channel.members.map(m => m.toString());
+    channelMembers.forEach(memberId => {
+      if (memberId !== req.user._id.toString()) {
+        sendToUser(memberId, {
+          type: 'CHANNEL_MESSAGE_NOTIFY',
+          data: {
+            channelId: req.params.id,
+            channelName: channel.name,
+            channelIcon: channel.icon,
+            senderName: req.user.name,
+            preview: message.content.split('\n')[0].slice(0, 80),
+            fromAdmin: isAdminSender,
+          },
+        });
+      }
+    });
 
     let warningInfo = null;
     if (hasProfanity && !isAdmin) {

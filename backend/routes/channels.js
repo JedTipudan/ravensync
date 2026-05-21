@@ -13,6 +13,9 @@ router.get('/:id/messages', getMessages);
 router.post('/:id/messages', sendMessage);
 router.patch('/messages/:msgId', editMessage);
 router.post('/global-broadcast', authorize('admin', 'superadmin'), globalBroadcast);
+router.post('/requests', require('../controllers/channelRequestController').submitRequest);
+router.get('/requests', authorize('admin', 'superadmin'), require('../controllers/channelRequestController').getRequests);
+router.patch('/requests/:id/review', authorize('superadmin'), require('../controllers/channelRequestController').reviewRequest);
 router.delete('/messages/:msgId', deleteMessage);
 
 module.exports = router;
